@@ -15,5 +15,8 @@
 #define IN_2B   14
 #define IN_1B   12
 
+// LED
+#define LED_PIN 34
+
 
 #endif /* MYHEADER_H */
