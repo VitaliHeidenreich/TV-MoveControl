@@ -14,9 +14,18 @@
 #define IN_1A   27
 #define IN_2B   14
 #define IN_1B   12
+// Test Pin
+#define TESTPIN 23
 
 // LED
 #define LED_PIN 34
+#define LED_IN  18
+#define LED_OUT 19
+
+// Weitere Parameter
+#define FREQUENZ 2000
+#define AUFLOESUNG 8
+#define MAX_PWM  180
 
 
 #endif /* MYHEADER_H */

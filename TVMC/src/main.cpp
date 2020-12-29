@@ -1,53 +1,46 @@
 #include <Arduino.h>
 #include "config.h"
-#include "init_and_help_fnx.h"
+#include "mypins.h"
 #include "WS2812B.h"
 
 WS2812 *Led;
+mypins InOut;
 
 void setup()
 {
-  init_gpios();
-  Led = new WS2812((gpio_num_t)LED_PIN,5,0);
+  InOut = mypins();
+  //Led = new WS2812((gpio_num_t)LED_PIN,5,0);
 }
 
 
 void loop()
 {
   uint8_t dirOut = 0;
-
   /**********************************************************************
    * Den Zustand des Fernsehers feststellen
    *********************************************************************/
-  if( GET_TVSTATE )
-  {
-    // Fernseher ausfahren
-    digitalWrite(IN_1A, 0);
-    digitalWrite(IN_1B, 1);
-    dirOut = 1;
-  }
-  else
-  {
-    // Fernseher einfahren
-    digitalWrite(IN_1A, 1);
-    digitalWrite(IN_1B, 0);
-    dirOut = 0;
-  }
+  dirOut = InOut.setMotorDir( InOut.getTestPinState() );  // ToDo: change
 
   /**********************************************************************
    * Position des Fernstehers feststellen
+   * * Out-Stopp ist    ET2
+   * * In-Stopp ist     ET1
    *********************************************************************/
-  if( (!GET_ET1 && dirOut==1) || (!GET_ET2 && dirOut==0) )
+  if( ((GET_ET1) && (dirOut==1)) || ((GET_ET2) && (dirOut==0)) )
   {
-    ledcWrite(0, 180);
+    SET_MOT_SPEED(MAX_PWM);
+    digitalWrite(EN_A, 1);
   }
   else
   {
-    ledcWrite(0, 0);
+    SET_MOT_SPEED(0);
+    digitalWrite(EN_A, 0);
   }
+    
 
+  InOut.showEndStoppState( GET_ET1, GET_ET2);
 
   // LED steuerung
-  Led->setAllPixels({120,0,0});
-  Led->show();
+  //Led->setAllPixels(170,0,0);
+  //Led->show();
 }
