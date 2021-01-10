@@ -5,8 +5,6 @@
 #define GET_ET1 (digitalRead(ET1))
 #define GET_ET2 (digitalRead(ET2))
 
-#define SET_MOT_SPEED(x) (ledcWrite(0, (x)))
-
 class mypins {
     private:
         uint8_t myVal;
@@ -15,4 +13,6 @@ class mypins {
         uint8_t setMotorDir( uint8_t dir );
         uint8_t getTestPinState( );
         void showEndStoppState( uint8_t stoppIn, uint8_t stoppOut);
+        void setMotorSpeed( uint8_t s );
+        uint8_t getTVstate( void );
 };

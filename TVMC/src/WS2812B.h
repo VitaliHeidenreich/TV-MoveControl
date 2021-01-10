@@ -12,7 +12,7 @@
 #include <driver/gpio.h>
 #include "Arduino.h"
 
-#define DEBUG_WS2812B 1
+#define DEBUG_WS2812B 0
 
 /**
  * @brief A data type representing the color of a pixel.

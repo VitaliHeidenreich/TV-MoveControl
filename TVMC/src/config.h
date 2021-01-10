@@ -18,14 +18,20 @@
 #define TESTPIN 23
 
 // LED
-#define LED_PIN 34
+#define LED_PIN 2
 #define LED_IN  18
 #define LED_OUT 19
 
 // Weitere Parameter
-#define FREQUENZ 2000
+#define FREQUENZ 200
 #define AUFLOESUNG 8
 #define MAX_PWM  180
+
+// Ananlogpin
+#define ANALOGPIN 35
+
+// Einschaltschwelle Fernseher
+#define TVONVALUE 2550
 
 
 #endif /* MYHEADER_H */
