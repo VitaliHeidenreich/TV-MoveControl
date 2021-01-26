@@ -1,3 +1,4 @@
+#pragma once
 #include "config.h"
 #include "Arduino.h"
 
@@ -15,4 +16,6 @@ class mypins {
         void showEndStoppState( uint8_t stoppIn, uint8_t stoppOut);
         void setMotorSpeed( uint8_t s );
         uint8_t getTVstate( void );
+        uint8_t getFiltMotCurrent();
+        static uint8_t collisionDetected;
 };

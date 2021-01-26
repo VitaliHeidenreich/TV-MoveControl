@@ -2,6 +2,8 @@
 #include "config.h"
 #include "mypins.h"
 
+uint8_t mypins::collisionDetected = 0;
+
 mypins::mypins()
 {
     // Fernseher-USB-Stecker
@@ -32,6 +34,10 @@ mypins::mypins()
     // Derzeit nicht verwendete Pins
     digitalWrite(IN_2A, 0);
     digitalWrite(IN_2B, 0);
+
+    // Motor current meassurement pin
+    pinMode(CURRENTMEASPIN, INPUT);
+    pinMode(TVPIN, ANALOG);
 }
 
 uint8_t mypins::setMotorDir( uint8_t dir )
@@ -39,15 +45,15 @@ uint8_t mypins::setMotorDir( uint8_t dir )
      if( dir )
      {
         // Fernseher ausfahren
-        digitalWrite(IN_1A, 0);
-        digitalWrite(IN_2A, 1);
+        digitalWrite(IN_1B, 0);
+        digitalWrite(IN_2B, 1);
         return 1;
      }
      else
      {
         // Fernseher einfahren
-        digitalWrite(IN_1A, 1);
-        digitalWrite(IN_2A, 0);
+        digitalWrite(IN_1B, 1);
+        digitalWrite(IN_2B, 0);
         return 0;
      }
 }
@@ -78,26 +84,76 @@ void mypins::setMotorSpeed( uint8_t speed )
 
 uint8_t mypins::getTVstate( void )
 {
-    uint8_t iRet = 0;
     uint32_t iMit = 0;
-    static uint16_t myVal[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-    static uint8_t valMem = 0;
+    static uint16_t myVal[TV_MEASNUMB] = {0};
+    static uint8_t z = 0;
 
     // Read analog value
-    myVal[valMem] = analogRead(ANALOGPIN);;
+    // Befüllung des Ringbuffers (kopieren von vorne nach hinten, beginnend am Ende)
+    for (uint8_t i = (TV_MEASNUMB - 1); i > 0; i--)
+    {
+        myVal[i] = myVal[i - 1];
+    }
+
+    // Neues Zeichen in den Buffer[0] schieben
+    myVal[0] = analogRead(TVPIN);
 
     // Bilden des Mittelwertes
-    for(uint8_t i = 0; i < 20; i++)
+    for(uint8_t i = 0; i < TV_MEASNUMB; i++)
         iMit = iMit +  myVal[i];
-    iMit = iMit / 20;
+    iMit = iMit / TV_MEASNUMB;
 
-    Serial.println(iMit);
-
-    // Set to next Position
-    if( valMem < 19 )
-        valMem ++;
-    else
-        valMem = 0;
+    // if(z>=20)
+    //     z=1;
+    // if(z==19)
+    //     Serial.println(iMit);
     
-    return iRet;
+    // z++;
+
+    if( iMit > 2185 )
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+uint8_t mypins::getFiltMotCurrent()
+{
+    static uint16_t currentValues[CURRENTNUMVAL] = {0};
+    uint32_t medianCValue = 0;
+
+    //static uint8_t test = 0;
+
+    //Befüllung des Ringbuffers (kopieren von vorne nach hinten, beginnend am Ende)
+    for (uint8_t i = (CURRENTNUMVAL - 1); i > 0; i--)
+    {
+        currentValues[i] = currentValues[i - 1];
+    }
+
+    // Neues Zeichen in den Buffer[0] schieben
+    currentValues[0] = analogRead(CURRENTMEASPIN);
+
+    // Bilden des Mittelwertes
+    for (uint8_t i = 0; i < CURRENTNUMVAL; i++)
+    {
+        medianCValue += currentValues[i];
+    }
+    medianCValue /= CURRENTNUMVAL;
+
+//to del
+    // if( test == 9)
+    //     Serial.println(medianCValue);
+    // test ++;
+    // if( test >= 10 )
+    //     test = 0;
+// end del
+    
+    // testing the measured median val
+    if( OVERCURDETVAL <= medianCValue )
+        return 1;
+    else
+        return 0;
 }
