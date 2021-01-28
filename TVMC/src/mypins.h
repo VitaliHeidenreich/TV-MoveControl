@@ -18,4 +18,5 @@ class mypins {
         uint8_t getTVstate( void );
         uint8_t getFiltMotCurrent();
         static uint8_t collisionDetected;
+        static uint8_t colorchanged;
 };

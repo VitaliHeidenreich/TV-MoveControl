@@ -3,6 +3,7 @@
 #include "mypins.h"
 
 uint8_t mypins::collisionDetected = 0;
+uint8_t mypins::colorchanged = 1;
 
 mypins::mypins()
 {

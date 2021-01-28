@@ -72,8 +72,12 @@ void loop()
 
         // Also set leds
         // LED steuerung R/G/B
-        Led->setAllPixels(st.getColor());
-        Led->show();
+        if( InOut.colorchanged )
+        {
+          Led->setAllPixels(st.getColor());
+          Led->show();
+          InOut.colorchanged = 0;
+        }
 
         event = 0;
       }
@@ -112,16 +116,14 @@ void loop()
           {
             InOut.setMotorSpeed( 0 );
           }
-            
-            InOut.showEndStoppState( GET_ET1, GET_ET2);
+          InOut.showEndStoppState( GET_ET1, GET_ET2);
         }
         else
         {
           InOut.setMotorSpeed( 0 );
         }
-        
       }
-
+      // Nur um die entstopps zu verifizieren, kann später enfallen
       InOut.showEndStoppState( GET_ET1, GET_ET2);
   }
   else

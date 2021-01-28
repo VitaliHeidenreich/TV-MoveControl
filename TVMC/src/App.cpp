@@ -60,7 +60,7 @@ uint8_t App::readCommandCharFromApp(char CommandChar)
         {
         // Auswerten der Farbe
         case 'F':
-            if (_AppBefehlBuffer[0] == '\n')          
+            if (_AppBefehlBuffer[0] == '\n') 
                 CommSetColor(_AppBefehl);
             else
                 iRet = 0;
@@ -72,6 +72,7 @@ uint8_t App::readCommandCharFromApp(char CommandChar)
                 Serial.print("Helligkeit erkannt ");
                 justSendTheFoundStringToSerial(_AppBefehlBuffer);
                 //TODO: Funktion schreiben
+
             }
             else
                 iRet = 0;
@@ -139,6 +140,7 @@ void App::CommSetColor(char AppBefehl[6])
 
     //Schrieben der Farbe in die Einstellungen
     settings->setColor(AppColor);
+    InOut->colorchanged = 1;
 }
 
 /***************************************************************************
@@ -179,6 +181,7 @@ void App::CommSetBrightness(char AppBefehl[6])
 
     //Schreiben der Helligkeit in die Einstellungen
     //_interpretersettings.setBrightnessPercent(AppBrightness);
+    InOut->colorchanged = 1;
 }
 
 /***************************************************************************
