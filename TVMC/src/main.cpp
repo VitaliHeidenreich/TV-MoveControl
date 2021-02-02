@@ -85,7 +85,7 @@ void loop()
       // Automatisches Verfahren des Fernsehers
       if( st._AutoMove )
       {
-          dirOut = InOut.setMotorDir( InOut.getTestPinState() );  // ToDo: change to "tvState"
+          dirOut = InOut.setMotorDir( tvState );  // ToDo: change InOut.getTestPinState() to "tvState" 
         
           /**********************************************************************
            * Ist-Position des Fernstehers feststellen und Abgleich mit dem Soll
