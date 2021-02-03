@@ -3,10 +3,13 @@
 #include "mypins.h"
 #include "WS2812B.h"
 #include "App.h"
+#include <EEPROM.h>
 
 #include "BluetoothSerial.h"
 #include "WS2812B.h"
 #include "time.h"
+
+#define EEPROM_SIZE 4
 
 
 WS2812 *Led;
@@ -51,6 +54,9 @@ void setup()
   timerAttachInterrupt(timer, &onTimer, true);
   timerAlarmWrite(timer, 10000, true);
   timerAlarmEnable(timer);
+
+  EEPROM.begin(EEPROM_SIZE);
+  st.setColor(EEPROM.read(0),EEPROM.read(1),EEPROM.read(2));
 }
 
 
@@ -65,18 +71,24 @@ void loop()
    *********************************************************************/
   if( !InOut.collisionDetected )
   {
+      // Eventgetriggerte Steuerung der Bewegung und der LEDs
       if( event )
       {
         tvState = InOut.getTVstate( );
         InOut.collisionDetected = InOut.getFiltMotCurrent();
 
         // Also set leds
-        // LED steuerung R/G/B
+        // LED Steuerung R/G/B
         if( InOut.colorchanged )
         {
           Led->setAllPixels(st.getColor());
           Led->show();
           InOut.colorchanged = 0;
+          // Zum Testen
+          EEPROM.write(0, st.getColor().red);
+          EEPROM.write(1, st.getColor().green);
+          EEPROM.write(2, st.getColor().blue);
+          EEPROM.commit();
         }
 
         event = 0;
@@ -106,7 +118,7 @@ void loop()
       {
         if(st._ManMoveDir)
         {
-          dirOut = InOut.setMotorDir( (st._ManMoveDir == 2) ? 1 : 0 );
+          dirOut = InOut.setMotorDir( (st._ManMoveDir == 2) ? 0 : 1 );
 
           if( ( (GET_ET1)&&(dirOut==1) ) || ( (GET_ET2)&&((dirOut==0) ) ) )
           {
@@ -116,20 +128,20 @@ void loop()
           {
             InOut.setMotorSpeed( 0 );
           }
-          InOut.showEndStoppState( GET_ET1, GET_ET2);
         }
         else
         {
           InOut.setMotorSpeed( 0 );
         }
       }
-      // Nur um die entstopps zu verifizieren, kann später enfallen
-      InOut.showEndStoppState( GET_ET1, GET_ET2);
   }
   else
   {
     InOut.setMotorSpeed( 0 );
   }
+
+  // Nur um die entstopps zu verifizieren, kann später enfallen
+  InOut.showEndStoppState( GET_ET1, GET_ET2);
 
   char c;
   if (SerialBT.available())

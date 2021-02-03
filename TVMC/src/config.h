@@ -37,7 +37,7 @@
 
 // Einlesen und steuern TV Zustand
 #define TVPIN   35
-#define TV_MEASNUMB   20
+#define TV_MEASNUMB   100
 #define TVONVALUE 2535
 
 
