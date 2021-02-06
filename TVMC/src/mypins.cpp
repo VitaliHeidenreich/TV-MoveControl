@@ -43,7 +43,7 @@ mypins::mypins()
 
 uint8_t mypins::setMotorDir( uint8_t dir )
 {
-     if( dir )
+     if( !dir )
      {
         // Fernseher ausfahren
         digitalWrite(IN_1B, 0);
@@ -86,8 +86,9 @@ void mypins::setMotorSpeed( uint8_t speed )
 uint8_t mypins::getTVstate( void )
 {
     uint32_t iMit = 0;
-    static uint16_t myVal[TV_MEASNUMB] = {0};
+    static uint32_t myVal[TV_MEASNUMB] = {2180};
     static uint8_t z = 0;
+    static uint8_t iRet = 0;
 
     // Read analog value
     // Befüllung des Ringbuffers (kopieren von vorne nach hinten, beginnend am Ende)
@@ -104,21 +105,21 @@ uint8_t mypins::getTVstate( void )
         iMit = iMit +  myVal[i];
     iMit = iMit / TV_MEASNUMB;
 
-    // if(z>=20)
-    //     z=1;
-    // if(z==19)
-    //     Serial.println(iMit);
+    if(z >= TV_MEASNUMB)
+        z=1;
+    if(z==(TV_MEASNUMB - 1))
+        Serial.println(iMit);
     
-    // z++;
+    z++;
 
-    if( iMit > 2185 )
-    {
-        return 1;
-    }
+    if( iMit > TVONVALUE )
+        iRet = 1;
+    else if(iMit < TVOFFVALUE )
+        iRet = 0;
     else
-    {
-        return 0;
-    }
+        iRet = iRet;
+
+    return iRet;
 }
 
 uint8_t mypins::getFiltMotCurrent()
