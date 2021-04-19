@@ -24,6 +24,7 @@ public:
         void setColor(pixel_t color);
         void setColor(byte red, byte green, byte blue);
         pixel_t getColor();
+        uint8_t blinkCollision(uint8_t on);
 
         static uint8_t _AutoMove;
         static uint8_t _ManMoveDir;

@@ -37,26 +37,26 @@ void IRAM_ATTR onTimer()
 
 void setup()
 {
-  Serial.begin(115200);
-  InOut = mypins();
-  Led = new WS2812((gpio_num_t)LED_PIN,112);
-  st = Settings();
-  Led->clear();
+    Serial.begin(115200);
+    InOut = mypins();
+    Led = new WS2812((gpio_num_t)LED_PIN,112);
+    st = Settings();
+    Led->clear();
 
-  if (!SerialBT.begin("MyTV_017558HM"))
-  {
-      Serial.println("An error occurred initializing Bluetooth");
-  }
+    if (!SerialBT.begin("MyTV_017558HM"))
+    {
+        Serial.println("An error occurred initializing Bluetooth");
+    }
 
-  // Timer Funktionen
-  event = 0;
-  timer = timerBegin(0, 80, true);
-  timerAttachInterrupt(timer, &onTimer, true);
-  timerAlarmWrite(timer, 10000, true);
-  timerAlarmEnable(timer);
+    // Timer Funktionen
+    event = 0;
+    timer = timerBegin(0, 80, true);
+    timerAttachInterrupt(timer, &onTimer, true);
+    timerAlarmWrite(timer, 10000, true);
+    timerAlarmEnable(timer);
 
-  EEPROM.begin(EEPROM_SIZE);
-  st.setColor(EEPROM.read(0),EEPROM.read(1),EEPROM.read(2));
+    EEPROM.begin(EEPROM_SIZE);
+    st.setColor(EEPROM.read(0),EEPROM.read(1),EEPROM.read(2));
 }
 
 
@@ -64,91 +64,116 @@ void loop()
 {
   static uint8_t dirOut = 0;
   static uint8_t tvState = 0;
+  static uint8_t lastStateCollision = 1;
   /**********************************************************************
    * solange keine Kollision erkannt wurde:
    * Den Zustand des Fernsehers feststellen und einstellen der Richtung
    * Abfrage erfolgt alle 500ms
    *********************************************************************/
-  if( !InOut.collisionDetected )
-  {
-      // Eventgetriggerte Steuerung der Bewegung und der LEDs
-      if( event )
-      {
+  
+    // Eventgetriggerte Steuerung der Bewegung und der LEDs
+    if( event )
+    {
         tvState = InOut.getTVstate( );
-        InOut.collisionDetected = InOut.getFiltMotCurrent();
 
         // Also set leds
         // LED Steuerung R/G/B
-        if( InOut.colorchanged )
+        if( !InOut.collisionDetected || lastStateCollision )
         {
-          Led->setAllPixels(st.getColor());
-          Led->show();
-          InOut.colorchanged = 0;
-          // Zum Testen
-          EEPROM.write(0, st.getColor().red);
-          EEPROM.write(1, st.getColor().green);
-          EEPROM.write(2, st.getColor().blue);
-          EEPROM.commit();
-        }
-
-        event = 0;
-      }
-
-      // Automatisches Verfahren des Fernsehers
-      if( st._AutoMove )
-      {
-          dirOut = InOut.setMotorDir( tvState );  // ToDo: change InOut.getTestPinState() to "tvState" 
-        
-          /**********************************************************************
-           * Ist-Position des Fernstehers feststellen und Abgleich mit dem Soll
-           * * Out-Stopp ist    ET2
-           * * In-Stopp ist     ET1
-           *********************************************************************/
-          if( ( ( (GET_ET1)&&(dirOut==1) ) || ( (GET_ET2)&&(dirOut==0) ) ) )
-          {
-            InOut.setMotorSpeed( MAX_PWM );
-          }
-          else
-          {
-            InOut.setMotorSpeed( 0 );
-          }
-      }
-      // Manuelles Verfahren des Fernsehers
-      else
-      {
-        if(st._ManMoveDir)
-        {
-          dirOut = InOut.setMotorDir( (st._ManMoveDir == 2) ? 0 : 1 );
-
-          if( ( (GET_ET1)&&(dirOut==1) ) || ( (GET_ET2)&&((dirOut==0) ) ) )
-          {
-            InOut.setMotorSpeed( MAX_PWM );
-          }
-          else
-          {
-            InOut.setMotorSpeed( 0 );
-          }
+            if( InOut.colorchanged )
+            {
+                Led->setAllPixels(st.getColor());
+                Led->show();
+                InOut.colorchanged = 0;
+                // Zum Testen
+                EEPROM.write(0, st.getColor().red);
+                EEPROM.write(1, st.getColor().green);
+                EEPROM.write(2, st.getColor().blue);
+                EEPROM.commit();
+            }
+            InOut.collisionDetected = InOut.getFiltMotCurrent();
+            lastStateCollision = 0;
         }
         else
         {
-          InOut.setMotorSpeed( 0 );
+            //Show collosion detected by blinking the lights
+            if( st.blinkCollision( 1 ) )
+            {
+                Led->setAllPixels({0,0,0});
+            }
+            else
+            {
+                Led->setAllPixels(st.getColor());
+            }
+            lastStateCollision = 1;
         }
-      }
-  }
-  else
-  {
-    InOut.setMotorSpeed( 0 );
-  }
+        
+        event = 0;
+    }
+    
+    /**********************************************************************
+     * solange keine Kollision erkannt wurde:
+     * Bewege den Fernseher falls nötig / gewünscht
+     *********************************************************************/
+    if( !InOut.collisionDetected )
+    {
 
-  // Nur um die entstopps zu verifizieren, kann später enfallen
-  InOut.showEndStoppState( GET_ET1, GET_ET2);
+        // Automatisches Verfahren des Fernsehers
+        if( st._AutoMove )
+        {
+            dirOut = InOut.setMotorDir( tvState );  // ToDo: change InOut.getTestPinState() to "tvState" 
 
-  char c;
-  if (SerialBT.available())
-  {
-      c = (char)SerialBT.read();
-      Serial.println(c);
-      //ToDo: Erster Test wird werden, die Zeit ueber die App vorzugeben
-      appinterpreter.readCommandCharFromApp( c );
-  }
+            /**********************************************************************
+             * Ist-Position des Fernstehers feststellen und Abgleich mit dem Soll
+             * * Out-Stopp ist    ET2
+             * * In-Stopp ist     ET1
+             *********************************************************************/
+            if( ( ( (GET_ET1)&&(dirOut==1) ) || ( (GET_ET2)&&(dirOut==0) ) ) )
+            {
+                InOut.setMotorSpeed( MAX_PWM );
+            }
+            else
+            {
+                InOut.setMotorSpeed( 0 );
+            }
+        }
+        // Manuelles Verfahren des Fernsehers
+        else
+        {
+            if(st._ManMoveDir)
+            {
+                dirOut = InOut.setMotorDir( (st._ManMoveDir == 2) ? 0 : 1 );
+
+                if( ( (GET_ET1)&&(dirOut==1) ) || ( (GET_ET2)&&((dirOut==0) ) ) )
+                {
+                    InOut.setMotorSpeed( MAX_PWM );
+                }
+                else
+                {
+                    InOut.setMotorSpeed( 0 );
+                }
+            }
+            else
+            {
+                InOut.setMotorSpeed( 0 );
+            }
+        }
+    }
+    // Collision detected
+    else
+    {
+        InOut.setMotorSpeed( 0 );
+    }
+
+    // Nur um die entstopps zu verifizieren, kann später enfallen
+    InOut.showEndStoppState( GET_ET1, GET_ET2);
+
+    char c;
+    if (SerialBT.available())
+    {
+        c = (char)SerialBT.read();
+        Serial.println(c);
+        //ToDo: Erster Test wird werden, die Zeit ueber die App vorzugeben
+        appinterpreter.readCommandCharFromApp( c );
+    }
 }

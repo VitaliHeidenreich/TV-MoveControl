@@ -45,3 +45,29 @@ byte Settings::getBrightnessPercent()
 {
     return map(Settings::_Brightness, 0, 255, 0, 100);
 }
+
+uint8_t Settings::blinkCollision(uint8_t on)
+{
+    static uint8_t blinkTikz = 0;
+    static uint8_t iRet = 0;
+
+
+    if( blinkTikz == 50 )
+    {
+        blinkTikz = 0;
+        if(iRet)
+        {
+            iRet = 0;
+        }
+        else
+        {
+            iRet = 1;
+        }
+    }
+    else
+    {
+        blinkTikz ++;
+    }
+
+    return  iRet;
+}
