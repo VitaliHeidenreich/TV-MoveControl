@@ -3,8 +3,8 @@
 #include "Arduino.h"
 
 #define GET_TVSTATE (digitalRead(TVSTATE))
-#define GET_ET1 (digitalRead(ET1))
-#define GET_ET2 (digitalRead(ET2))
+#define OUT_SENSSTATE (digitalRead(ET2))
+#define IN_SENSSTATE (digitalRead(ET1))
 
 class mypins {
     private:
@@ -13,7 +13,7 @@ class mypins {
         mypins( );
         uint8_t setMotorDir( uint8_t dir );
         uint8_t getTestPinState( );
-        void showEndStoppState( uint8_t stoppIn, uint8_t stoppOut);
+        void setOnboardLed( uint8_t ledState );
         void setMotorSpeed( uint8_t s );
         uint8_t getTVstate( void );
         uint8_t getFiltMotCurrent();

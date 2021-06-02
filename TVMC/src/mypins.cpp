@@ -16,12 +16,12 @@ mypins::mypins()
 
     // Motor 1 und 2 Enabler
     ledcSetup(0, FREQUENZ, AUFLOESUNG);
-    ledcAttachPin(EN_A, 0);
+    // ledcAttachPin(EN_A, 0);
     ledcAttachPin(EN_B, 0);
 
     // Richtungspins auf Ausgang schalten
-    pinMode(IN_1A, OUTPUT);
-    pinMode(IN_2A, OUTPUT);
+    // pinMode(IN_1A, OUTPUT);
+    // pinMode(IN_2A, OUTPUT);
     pinMode(IN_1B, OUTPUT);
     pinMode(IN_2B, OUTPUT);
 
@@ -31,10 +31,6 @@ mypins::mypins()
     // Ueberwachungs-LEDs als Ausgang
     pinMode(LED_IN,  OUTPUT);
     pinMode(LED_OUT, OUTPUT);
-
-    // Derzeit nicht verwendete Pins
-    digitalWrite(IN_2A, 0);
-    digitalWrite(IN_2B, 0);
 
     // Motor current meassurement pin
     pinMode(CURRENTMEASPIN, INPUT);
@@ -64,14 +60,9 @@ uint8_t mypins::getTestPinState( void )
     return (digitalRead(TESTPIN));
 }
 
-void mypins::showEndStoppState( uint8_t stoppIn, uint8_t stoppOut)
+void mypins::setOnboardLed( uint8_t ledState )
 {
-    if(!stoppIn)
-        digitalWrite(LED_IN, 1);
-    else
-        digitalWrite(LED_IN, 0);
-    
-    if(!stoppOut)
+    if(!ledState)
         digitalWrite(LED_OUT, 1);
     else
         digitalWrite(LED_OUT, 0);

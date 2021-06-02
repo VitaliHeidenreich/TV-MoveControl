@@ -117,9 +117,8 @@ void loop()
      *********************************************************************/
     if( !InOut.collisionDetected )
     {
-
         // Automatisches Verfahren des Fernsehers
-        if( st._AutoMove )
+        if( st._AutoMove ) // Initial nicht aktiv
         {
             dirOut = InOut.setMotorDir( tvState );  // ToDo: change InOut.getTestPinState() to "tvState" 
 
@@ -128,7 +127,7 @@ void loop()
              * * Out-Stopp ist    ET2
              * * In-Stopp ist     ET1
              *********************************************************************/
-            if( ( ( (GET_ET1)&&(dirOut==1) ) || ( (GET_ET2)&&(dirOut==0) ) ) )
+            if( ( ( (OUT_SENSSTATE)&&(dirOut==1) ) || ( (IN_SENSSTATE)&&(dirOut==0) ) ) )
             {
                 InOut.setMotorSpeed( MAX_PWM );
             }
@@ -140,11 +139,11 @@ void loop()
         // Manuelles Verfahren des Fernsehers
         else
         {
-            if(st._ManMoveDir)
+            if(st._ManMoveDir || !InOut.getTestPinState() ) // wenn 0, dann ist keine Richtung in der App gewählt
             {
                 dirOut = InOut.setMotorDir( (st._ManMoveDir == 2) ? 0 : 1 );
 
-                if( ( (GET_ET1)&&(dirOut==1) ) || ( (GET_ET2)&&((dirOut==0) ) ) )
+                if( ( (OUT_SENSSTATE)&&(dirOut==1) ) || ( (IN_SENSSTATE)&&((dirOut==0) ) ) || !InOut.getTestPinState() )
                 {
                     InOut.setMotorSpeed( MAX_PWM );
                 }
@@ -163,10 +162,9 @@ void loop()
     else
     {
         InOut.setMotorSpeed( 0 );
+        InOut.setOnboardLed( 1 );
     }
 
-    // Nur um die entstopps zu verifizieren, kann später enfallen
-    InOut.showEndStoppState( GET_ET1, GET_ET2);
 
     char c;
     if (SerialBT.available())

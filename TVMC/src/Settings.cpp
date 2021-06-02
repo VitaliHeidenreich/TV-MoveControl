@@ -2,7 +2,7 @@
 #include "Settings.h"
 
 pixel_t Settings::_Color = {100,100,100};
-uint8_t Settings::_AutoMove = 1;
+uint8_t Settings::_AutoMove = 0;
 uint8_t Settings::_ManMoveDir = 0;
 
 
