@@ -16,10 +16,13 @@ WS2812 *Led;
 mypins InOut;
 Settings st;
 
+static uint32_t anzeiger = 0;
+
 hw_timer_t * timer = NULL;
 hw_timer_t * testTimer = NULL;
 portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 uint8_t event;
+uint8_t senderTrigger = 0;
 
 /***************************************************************************
  * Anlegen der Peripherie Instanzen
@@ -43,8 +46,7 @@ void setup()
     st = Settings();
     Led->clear();
 
-    if (!SerialBT.begin("MyTV_017558HM"))
-    {
+    if (!SerialBT.begin("MyTV_0815DEF")){
         Serial.println("An error occurred initializing Bluetooth");
     }
 
@@ -98,16 +100,14 @@ void loop()
         {
             //Show collosion detected by blinking the lights
             if( st.blinkCollision( 1 ) )
-            {
                 Led->setAllPixels({0,0,0});
-            }
             else
-            {
                 Led->setAllPixels(st.getColor());
-            }
+            
             lastStateCollision = 1;
         }
-        
+
+        senderTrigger ++;
         event = 0;
     }
     
@@ -136,10 +136,11 @@ void loop()
                 InOut.setMotorSpeed( 0 );
             }
         }
-        // Manuelles Verfahren des Fernsehers
         else
         {
-            if(st._ManMoveDir || !InOut.getTestPinState() ) // wenn 0, dann ist keine Richtung in der App gewählt
+            // Manuelles Verfahren des Fernsehers
+            // wenn 0, dann ist keine Richtung in der App gewählt
+            if(st._ManMoveDir || !InOut.getTestPinState() )
             {
                 dirOut = InOut.setMotorDir( (st._ManMoveDir == 2) ? 0 : 1 );
 
@@ -174,4 +175,25 @@ void loop()
         //ToDo: Erster Test wird werden, die Zeit ueber die App vorzugeben
         appinterpreter.readCommandCharFromApp( c );
     }
+
+
+    if (SerialBT.hasClient() == true) 
+    {
+        portENTER_CRITICAL_ISR(&timerMux);
+        if( senderTrigger >= 100 )
+        {
+            if( InOut.getTVstate() )
+                SerialBT.print("<<< ON >>>:              value - ");
+            else
+                SerialBT.print("<<< OFF >>>:             value - ");
+            
+            SerialBT.print(InOut.iMit);
+            SerialBT.print("         Nr.: ");
+            SerialBT.println((anzeiger++));
+            
+            senderTrigger = 0;
+        }
+        portEXIT_CRITICAL_ISR(&timerMux);
+    }
+
 }

@@ -4,6 +4,7 @@
 
 uint8_t mypins::collisionDetected = 0;
 uint8_t mypins::colorchanged = 1;
+uint32_t mypins::iMit = 2180;
 
 mypins::mypins()
 {
@@ -76,7 +77,7 @@ void mypins::setMotorSpeed( uint8_t speed )
 
 uint8_t mypins::getTVstate( void )
 {
-    uint32_t iMit = 0;
+    //uint32_t iMit = 0;
     static uint32_t myVal[TV_MEASNUMB] = {2180};
     static uint8_t z = 0;
     static uint8_t iRet = 0;
