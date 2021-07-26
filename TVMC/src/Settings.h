@@ -29,6 +29,14 @@ public:
         static uint8_t _AutoMove;
         static uint8_t _ManMoveDir;
 
+        // Freigabe der Steuerung nach einer Definierten Zeit beim Aufstart
+        static uint8_t moveEna;
+        void startUpTimer( void );
+
+        // Speichern der Angaben auf den EEPROM
+        void saveActColor( void );
+        void getSavedColor( void );
+
 private:
         static byte _Brightness;
         static pixel_t _Color;

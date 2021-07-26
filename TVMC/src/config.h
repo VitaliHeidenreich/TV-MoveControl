@@ -33,7 +33,7 @@
 // Weitere Parameter
 #define FREQUENZ 20
 #define AUFLOESUNG 8
-#define MAX_PWM  95
+#define MAX_PWM  115
 
 // Einlesen und steuern TV Zustand
 #define TVPIN   35

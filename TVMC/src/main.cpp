@@ -3,13 +3,11 @@
 #include "mypins.h"
 #include "WS2812B.h"
 #include "App.h"
-#include <EEPROM.h>
 
 #include "BluetoothSerial.h"
 #include "WS2812B.h"
 #include "time.h"
 
-#define EEPROM_SIZE 4
 
 
 WS2812 *Led;
@@ -56,14 +54,13 @@ void setup()
     timerAttachInterrupt(timer, &onTimer, true);
     timerAlarmWrite(timer, 10000, true);
     timerAlarmEnable(timer);
-
-    EEPROM.begin(EEPROM_SIZE);
-    st.setColor(EEPROM.read(0),EEPROM.read(1),EEPROM.read(2));
+    
+    st.getSavedColor( );
 }
 
 
 void loop()
-{
+{ 
   static uint8_t dirOut = 0;
   static uint8_t tvState = 0;
   static uint8_t lastStateCollision = 1;
@@ -76,6 +73,8 @@ void loop()
     // Eventgetriggerte Steuerung der Bewegung und der LEDs
     if( event )
     {
+        st.startUpTimer();
+
         tvState = InOut.getTVstate( );
 
         // Also set leds
@@ -88,23 +87,10 @@ void loop()
                 Led->show();
                 InOut.colorchanged = 0;
                 // Zum Testen
-                EEPROM.write(0, st.getColor().red);
-                EEPROM.write(1, st.getColor().green);
-                EEPROM.write(2, st.getColor().blue);
-                EEPROM.commit();
+                st.saveActColor( );
             }
             InOut.collisionDetected = InOut.getFiltMotCurrent();
             lastStateCollision = 0;
-        }
-        else
-        {
-            //Show collosion detected by blinking the lights
-            if( st.blinkCollision( 1 ) )
-                Led->setAllPixels({0,0,0});
-            else
-                Led->setAllPixels(st.getColor());
-            
-            lastStateCollision = 1;
         }
 
         senderTrigger ++;
@@ -112,10 +98,10 @@ void loop()
     }
     
     /**********************************************************************
-     * solange keine Kollision erkannt wurde:
+     * solange keine Kollision erkannt wurde und die Startzeit abgewartet wurde:
      * Bewege den Fernseher falls nötig / gewünscht
      *********************************************************************/
-    if( !InOut.collisionDetected )
+    if( !InOut.collisionDetected && st.moveEna )
     {
         // Automatisches Verfahren des Fernsehers
         if( st._AutoMove ) // Initial nicht aktiv

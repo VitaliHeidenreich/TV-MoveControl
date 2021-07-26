@@ -1,16 +1,21 @@
 #include <Arduino.h>
 #include "Settings.h"
+#include <EEPROM.h>
 
 pixel_t Settings::_Color = {100,100,100};
 uint8_t Settings::_AutoMove = 0;
 uint8_t Settings::_ManMoveDir = 0;
+uint8_t Settings::moveEna = 0;
 
+#define EEPROM_SIZE 4
 
 Settings::Settings()
 {
         _Color.red = 0;
         _Color.green = 0;
         _Color.blue = 0;
+
+        EEPROM.begin(EEPROM_SIZE);
 }
 
 /****************************************
@@ -71,3 +76,32 @@ uint8_t Settings::blinkCollision(uint8_t on)
 
     return  iRet;
 }
+
+/**********************************************************************
+ * Beim Aufstart soll eine vorgegebene Zeit abgewartet werden,
+ * damit der Stromsensor plausible Werte bekommt
+ *********************************************************************/
+void Settings::startUpTimer()
+{
+    static uint16_t tikz = 0;
+    if( tikz >= 300 )
+        moveEna = 1;
+    else
+        tikz ++;
+}
+
+
+void Settings::getSavedColor( void )
+{
+    setColor(EEPROM.read(0),EEPROM.read(1),EEPROM.read(2));
+}
+
+void Settings::saveActColor( )
+{
+    // Zum Testen
+    EEPROM.write(0, _Color.red);
+    EEPROM.write(1, _Color.green);
+    EEPROM.write(2, _Color.blue);
+    EEPROM.commit(); 
+}
+
