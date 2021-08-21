@@ -9,7 +9,7 @@
 #include "sdkconfig.h"
 #include "WS2812B.h"
 
-static char tag[] = "WS2812";
+//static char tag[] = "WS2812";
 
 /**
  * A NeoPixel is defined by 3 bytes ... red, green and blue.

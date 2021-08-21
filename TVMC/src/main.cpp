@@ -44,7 +44,7 @@ void setup()
     st = Settings();
     Led->clear();
 
-    if (!SerialBT.begin("MyTV_0815DEF")){
+    if (!SerialBT.begin("MyTV_TEST")){
         Serial.println("An error occurred initializing Bluetooth");
     }
 
@@ -113,7 +113,7 @@ void loop()
              * * Out-Stopp ist    ET2
              * * In-Stopp ist     ET1
              *********************************************************************/
-            if( ( ( (OUT_SENSSTATE)&&(dirOut==1) ) || ( (IN_SENSSTATE)&&(dirOut==0) ) ) )
+            if(((( OUT_SENSSTATE ) && ( dirOut==1 )) || (( IN_SENSSTATE ) && ( dirOut==0 ))))
             {
                 InOut.setMotorSpeed( MAX_PWM );
             }
@@ -153,15 +153,10 @@ void loop()
     }
 
 
-    char c;
     if (SerialBT.available())
     {
-        c = (char)SerialBT.read();
-        Serial.println(c);
-        //ToDo: Erster Test wird werden, die Zeit ueber die App vorzugeben
-        appinterpreter.readCommandCharFromApp( c );
+        appinterpreter.readCommandCharFromApp( (char)SerialBT.read() );
     }
-
 
     if (SerialBT.hasClient() == true) 
     {
@@ -181,5 +176,4 @@ void loop()
         }
         portEXIT_CRITICAL_ISR(&timerMux);
     }
-
 }
