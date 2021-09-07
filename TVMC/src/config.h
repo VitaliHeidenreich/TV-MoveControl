@@ -31,15 +31,15 @@
 #define LED_OUT 19
 
 // Weitere Parameter
-#define FREQUENZ 20
+#define FREQUENZ 30
 #define AUFLOESUNG 8
-#define MAX_PWM  115
+#define MAX_PWM  80
 
 // Einlesen und steuern TV Zustand
 #define TVPIN   35
-#define TV_MEASNUMB   250
-#define TVONVALUE 2535
-#define TVOFFVALUE 2100
+#define TV_MEASNUMB   1000
+#define TVONVALUE 1400
+#define TVOFFVALUE 1380
 
 
 // Over Current Protection Motor

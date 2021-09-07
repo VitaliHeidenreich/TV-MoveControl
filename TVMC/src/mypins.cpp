@@ -40,7 +40,7 @@ mypins::mypins()
 
 uint8_t mypins::setMotorDir( uint8_t dir )
 {
-     if( !dir )
+     if( dir )
      {
         // Fernseher ausfahren
         digitalWrite(IN_1B, 0);
@@ -75,16 +75,15 @@ void mypins::setMotorSpeed( uint8_t speed )
     ledcWrite(0, speed);
 }
 
-uint8_t mypins::getTVstate( void )
+uint32_t mypins::getTVstate( void )
 {
-    //uint32_t iMit = 0;
     static uint32_t myVal[TV_MEASNUMB] = {2180};
-    static uint8_t z = 0;
-    static uint8_t iRet = 0;
+    static uint32_t z = 0;
+    static uint32_t iRet = 0;
 
     // Read analog value
     // Befüllung des Ringbuffers (kopieren von vorne nach hinten, beginnend am Ende)
-    for (uint8_t i = (TV_MEASNUMB - 1); i > 0; i--)
+    for (uint32_t i = (TV_MEASNUMB - 1); i > 0; i--)
     {
         myVal[i] = myVal[i - 1];
     }
@@ -93,14 +92,14 @@ uint8_t mypins::getTVstate( void )
     myVal[0] = analogRead(TVPIN);
 
     // Bilden des Mittelwertes
-    for(uint8_t i = 0; i < TV_MEASNUMB; i++)
+    for(uint32_t i = 0; i < TV_MEASNUMB; i++)
         iMit = iMit +  myVal[i];
     iMit = iMit / TV_MEASNUMB;
 
     if(z >= TV_MEASNUMB)
         z=1;
-    if(z==(TV_MEASNUMB - 1))
-        Serial.println(iMit);
+    //if(z==(TV_MEASNUMB - 1))
+    //    Serial.println(iMit);
     
     z++;
 

@@ -115,10 +115,10 @@ void App::CommManMove(char AppBefehl[6])
 {
     // Einfahren des Fernsehers
     if( _hexcharToUint8_t(AppBefehl[5]) == 1 )
-        settings->_ManMoveDir = 2;
+        settings->_ManMoveDir = 1;
     // Ausfahren des Fernsehers
     else if( _hexcharToUint8_t(AppBefehl[5]) == 2 )
-        settings->_ManMoveDir = 1;
+        settings->_ManMoveDir = 2;
     // Anhalten des Fernsehers
     else
         settings->_ManMoveDir = 0;

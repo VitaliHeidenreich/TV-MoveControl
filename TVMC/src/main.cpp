@@ -115,7 +115,10 @@ void loop()
              *********************************************************************/
             if(((( OUT_SENSSTATE ) && ( dirOut==1 )) || (( IN_SENSSTATE ) && ( dirOut==0 ))))
             {
-                InOut.setMotorSpeed( MAX_PWM );
+                if(dirOut)
+                    InOut.setMotorSpeed( MAX_PWM -10 );
+                else
+                    InOut.setMotorSpeed( MAX_PWM );
             }
             else
             {
@@ -132,7 +135,11 @@ void loop()
 
                 if( ( (OUT_SENSSTATE)&&(dirOut==1) ) || ( (IN_SENSSTATE)&&((dirOut==0) ) ) || !InOut.getTestPinState() )
                 {
-                    InOut.setMotorSpeed( MAX_PWM );
+                    //InOut.setMotorSpeed( MAX_PWM );
+                    if(dirOut)
+                        InOut.setMotorSpeed( MAX_PWM - 10  );
+                    else
+                        InOut.setMotorSpeed( MAX_PWM );
                 }
                 else
                 {
@@ -157,23 +164,19 @@ void loop()
     {
         appinterpreter.readCommandCharFromApp( (char)SerialBT.read() );
     }
+    
 
-    if (SerialBT.hasClient() == true) 
+    if( senderTrigger >= 100 )
     {
-        portENTER_CRITICAL_ISR(&timerMux);
-        if( senderTrigger >= 100 )
-        {
-            if( InOut.getTVstate() )
-                SerialBT.print("<<< ON >>>:              value - ");
-            else
-                SerialBT.print("<<< OFF >>>:             value - ");
-            
-            SerialBT.print(InOut.iMit);
-            SerialBT.print("         Nr.: ");
-            SerialBT.println((anzeiger++));
-            
-            senderTrigger = 0;
-        }
-        portEXIT_CRITICAL_ISR(&timerMux);
+        if( InOut.getTVstate() )
+            Serial.print("<<< ON >>>:   value - ");
+        else
+            Serial.print("<<< OFF >>>:  value - ");
+        
+        Serial.print(InOut.iMit);
+        Serial.print("         Nr.: ");
+        Serial.println((anzeiger++));
+        
+        senderTrigger = 0;
     }
 }
