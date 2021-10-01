@@ -65,18 +65,6 @@ uint8_t App::readCommandCharFromApp(char CommandChar)
             else
                 iRet = 0;
             break;
-        // Auswerten der Helligkeit
-        case 'H':
-            if (_AppBefehlBuffer[0] == '\n')
-            {
-                Serial.print("Helligkeit erkannt ");
-                justSendTheFoundStringToSerial(_AppBefehlBuffer);
-                //TODO: Funktion schreiben
-
-            }
-            else
-                iRet = 0;
-            break;
         // Auswerten der Zeit
         case 'T':
             if (_AppBefehlBuffer[0] == '\n')
@@ -89,11 +77,19 @@ uint8_t App::readCommandCharFromApp(char CommandChar)
             else
                 iRet = 0;
             break;
+        // Automatisches Bewegen zulassen
         case 'A':
                 CommSetAutomover(_AppBefehl);
             break;
+        // Nur manuelles Bewegen zulassen (per App)
         case 'M':
                 CommManMove(_AppBefehl);
+            break;
+        // Geschwindigkeit und Frequenz einstellen (Inits werden in der config.h angegeben)
+        // XXXX [Frequency 0-20000] XX [Speed 0-200]
+        case 'S':
+                justSendTheFoundStringToSerial(_AppBefehlBuffer);
+                setFrequenzAndSpeed( _AppBefehl );
             break;
         // Reset collision detected state by the app
         case 'R':
@@ -159,32 +155,6 @@ void App::CommSetAutomover(char AppBefehl[6])
 }
 
 /***************************************************************************
- * Funktion aus dem App-Befehl die Helligkeit zu setzen
- * Übergabeparameter: Array mit dem entsprechenden Befehl
- * Rückgabe: kein
-***************************************************************************/
-void App::CommSetBrightness(char AppBefehl[6])
-{
-    uint8_t AppBrightness;
-
-    //Auslesen der Helligkeit
-    AppBrightness = _hexcharToUint8_t(AppBefehl[0]) * 100 + _hexcharToUint8_t(AppBefehl[1]) * 10 + _hexcharToUint8_t(AppBefehl[2]);
-
-    Serial.println("Helligkeit: ");
-    Serial.println(AppBrightness);
-
-    //Verwerfen des versendeten Appwerts bei Wert außerhalb des Wertebereichs
-    if (AppBrightness > 100)
-    {
-        //AppBrightness = _interpretersettings.getBrightnessPercent();
-    }
-
-    //Schreiben der Helligkeit in die Einstellungen
-    //_interpretersettings.setBrightnessPercent(AppBrightness);
-    InOut->colorchanged = 1;
-}
-
-/***************************************************************************
  * Funktion aus dem App-Befehl die Uhrzeit zu setzen
  * Übergabeparameter: Array mit dem entsprechenden Befehl
  * Rückgabe: kein
@@ -214,11 +184,31 @@ void App::CommSetTime(char AppBefehl[6])
 
     //Auslesen der bereits enthaltenen Datumsinformation
     //AppDate = _interpreterzeitmaster->getDate();
-    //AppMonth = _interpreterzeitmaster->getMonth();
+    //AppMonth = _interpreterzeitmaster->getMonth();yxy
     //AppYear = _interpreterzeitmaster->getYear();
 
     //Schreiben der Uhrzeit auf die Echtzeituhr
     //_interpreterzeitmaster->setTimeDate(AppHours, AppMinutes, AppSeconds, AppDate, AppMonth, AppYear);
+}
+
+void App::setFrequenzAndSpeed( char *_AppBefehl )
+{
+    uint32_t speed = MAX_PWM;
+    uint32_t frequenz = FREQUENZ;
+
+    //char myChar[] = "201110";
+    //_AppBefehl = myChar;
+    justSendTheFoundStringToSerial(_AppBefehl);
+
+    speed    = _hexcharToUint8_t(*(_AppBefehl+1))*16+_hexcharToUint8_t(*(_AppBefehl+0));
+    frequenz = _hexcharToUint8_t(*(_AppBefehl+4))*256+_hexcharToUint8_t(*(_AppBefehl+3))*16+_hexcharToUint8_t(*(_AppBefehl+2));
+    
+    //(speed > 200)? speed = 200:speed = speed;
+    //(frequenz > 20000)? frequenz = 20000: frequenz = frequenz;
+
+    Serial.print("Eingestellte Frequenz: "); Serial.println(frequenz);
+    Serial.print("Eingestellte Geschwindigkeit: "); Serial.println(speed);
+    //ledcSetup(0, frequenz, speed);
 }
 
 

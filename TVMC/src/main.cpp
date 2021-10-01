@@ -8,7 +8,7 @@
 #include "WS2812B.h"
 #include "time.h"
 
-
+//0F903A
 
 WS2812 *Led;
 mypins InOut;
@@ -56,6 +56,7 @@ void setup()
     timerAlarmEnable(timer);
     
     st.getSavedColor( );
+    Serial.println("ESP32 gestartet.");
 }
 
 
@@ -86,7 +87,6 @@ void loop()
                 Led->setAllPixels(st.getColor());
                 Led->show();
                 InOut.colorchanged = 0;
-                // Zum Testen
                 st.saveActColor( );
             }
             InOut.collisionDetected = InOut.getFiltMotCurrent();
@@ -115,8 +115,9 @@ void loop()
              *********************************************************************/
             if(((( OUT_SENSSTATE ) && ( dirOut==1 )) || (( IN_SENSSTATE ) && ( dirOut==0 ))))
             {
+                // Korrektur der Geschwindigkeiten
                 if(dirOut)
-                    InOut.setMotorSpeed( MAX_PWM -10 );
+                    InOut.setMotorSpeed( MAX_PWM - 10 );
                 else
                     InOut.setMotorSpeed( MAX_PWM );
             }
@@ -135,7 +136,7 @@ void loop()
 
                 if( ( (OUT_SENSSTATE)&&(dirOut==1) ) || ( (IN_SENSSTATE)&&((dirOut==0) ) ) || !InOut.getTestPinState() )
                 {
-                    //InOut.setMotorSpeed( MAX_PWM );
+                    // Korrektur der Geschwindigkeiten
                     if(dirOut)
                         InOut.setMotorSpeed( MAX_PWM - 10  );
                     else
@@ -159,24 +160,17 @@ void loop()
         InOut.setOnboardLed( 1 );
     }
 
-
-    if (SerialBT.available())
+    //SerialBT.available()
+    if (Serial.available())
     {
-        appinterpreter.readCommandCharFromApp( (char)SerialBT.read() );
+        // (char)SerialBT.read()
+        appinterpreter.readCommandCharFromApp( (char)Serial.read() );
     }
     
 
-    if( senderTrigger >= 100 )
-    {
-        if( InOut.getTVstate() )
-            Serial.print("<<< ON >>>:   value - ");
-        else
-            Serial.print("<<< OFF >>>:  value - ");
-        
-        Serial.print(InOut.iMit);
-        Serial.print("         Nr.: ");
-        Serial.println((anzeiger++));
-        
-        senderTrigger = 0;
-    }
+    // if( senderTrigger >= 100 )
+    // {
+    //     Serial.println((anzeiger++));  
+    //     senderTrigger = 0;
+    // }
 }

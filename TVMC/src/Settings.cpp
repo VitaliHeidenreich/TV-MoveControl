@@ -5,7 +5,7 @@
 pixel_t Settings::_Color = {100,100,100};
 uint8_t Settings::_AutoMove = 0;
 uint8_t Settings::_ManMoveDir = 0;
-uint8_t Settings::moveEna = 0;
+uint8_t Settings::moveEna = 1;
 
 #define EEPROM_SIZE 4
 
@@ -98,7 +98,7 @@ void Settings::getSavedColor( void )
 
 void Settings::saveActColor( )
 {
-    // Zum Testen
+    //Zum Testen
     EEPROM.write(0, _Color.red);
     EEPROM.write(1, _Color.green);
     EEPROM.write(2, _Color.blue);

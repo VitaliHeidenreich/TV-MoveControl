@@ -30,6 +30,8 @@ private:
      void CommSetTime(char AppBefehl[6]);
      void CommSetAutomover(char AppBefehl[6]);
      void CommManMove(char AppBefehl[6]);
+     // Geschwindigkeit und Frequenz des Boards per App einstellen
+     void setFrequenzAndSpeed( char *_AppBefehl );
 
 
      /****************************************
