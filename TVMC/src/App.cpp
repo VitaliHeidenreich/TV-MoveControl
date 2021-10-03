@@ -71,7 +71,6 @@ uint8_t App::readCommandCharFromApp(char CommandChar)
             {
                 Serial.print("Zeit erkannt ");
                 justSendTheFoundStringToSerial(_AppBefehlBuffer);
-
                 //CommSetTime(_AppBefehl);
             }
             else
@@ -86,9 +85,8 @@ uint8_t App::readCommandCharFromApp(char CommandChar)
                 CommManMove(_AppBefehl);
             break;
         // Geschwindigkeit und Frequenz einstellen (Inits werden in der config.h angegeben)
-        // XXXX [Frequency 0-20000] XX [Speed 0-200]
+        // XXXX [Frequency 0-25000] XX [Speed 0-200]
         case 'S':
-                justSendTheFoundStringToSerial(_AppBefehlBuffer);
                 setFrequenzAndSpeed( _AppBefehl );
             break;
         // Reset collision detected state by the app
@@ -191,20 +189,16 @@ void App::CommSetTime(char AppBefehl[6])
     //_interpreterzeitmaster->setTimeDate(AppHours, AppMinutes, AppSeconds, AppDate, AppMonth, AppYear);
 }
 
-void App::setFrequenzAndSpeed( char *_AppBefehl )
+void App::setFrequenzAndSpeed(char AppBefehl[6])
 {
     uint32_t speed = MAX_PWM;
     uint32_t frequenz = FREQUENZ;
 
-    //char myChar[] = "201110";
-    //_AppBefehl = myChar;
-    justSendTheFoundStringToSerial(_AppBefehl);
-
-    speed    = _hexcharToUint8_t(*(_AppBefehl+1))*16+_hexcharToUint8_t(*(_AppBefehl+0));
-    frequenz = _hexcharToUint8_t(*(_AppBefehl+4))*256+_hexcharToUint8_t(*(_AppBefehl+3))*16+_hexcharToUint8_t(*(_AppBefehl+2));
+    speed    = _hexcharToUint8_t(AppBefehl[4])*16+_hexcharToUint8_t(AppBefehl[5]);
+    frequenz = _hexcharToUint8_t(AppBefehl[0])*4096+_hexcharToUint8_t(AppBefehl[1])*256+_hexcharToUint8_t(AppBefehl[2])*16+_hexcharToUint8_t(AppBefehl[3]);
     
-    //(speed > 200)? speed = 200:speed = speed;
-    //(frequenz > 20000)? frequenz = 20000: frequenz = frequenz;
+    (speed > 200)? speed = 200:speed = speed;
+    (frequenz > 20000)? frequenz = 25000: frequenz = frequenz;
 
     Serial.print("Eingestellte Frequenz: "); Serial.println(frequenz);
     Serial.print("Eingestellte Geschwindigkeit: "); Serial.println(speed);
