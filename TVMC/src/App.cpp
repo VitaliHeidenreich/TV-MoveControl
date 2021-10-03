@@ -70,7 +70,6 @@ uint8_t App::readCommandCharFromApp(char CommandChar)
             if (_AppBefehlBuffer[0] == '\n')
             {
                 Serial.print("Zeit erkannt ");
-                justSendTheFoundStringToSerial(_AppBefehlBuffer);
                 //CommSetTime(_AppBefehl);
             }
             else
@@ -87,7 +86,8 @@ uint8_t App::readCommandCharFromApp(char CommandChar)
         // Geschwindigkeit und Frequenz einstellen (Inits werden in der config.h angegeben)
         // XXXX [Frequency 0-25000] XX [Speed 0-200]
         case 'S':
-                setFrequenzAndSpeed( _AppBefehl );
+                justSendTheFoundStringToSerial(_AppBefehlBuffer);
+                setFrequenzAndSpeed( _AppBefehlBuffer );
             break;
         // Reset collision detected state by the app
         case 'R':
@@ -189,20 +189,18 @@ void App::CommSetTime(char AppBefehl[6])
     //_interpreterzeitmaster->setTimeDate(AppHours, AppMinutes, AppSeconds, AppDate, AppMonth, AppYear);
 }
 
-void App::setFrequenzAndSpeed(char AppBefehl[6])
+void App::setFrequenzAndSpeed( char *_AppBefehl )
 {
     uint32_t speed = MAX_PWM;
     uint32_t frequenz = FREQUENZ;
 
-    speed    = _hexcharToUint8_t(AppBefehl[4])*16+_hexcharToUint8_t(AppBefehl[5]);
-    frequenz = _hexcharToUint8_t(AppBefehl[0])*4096+_hexcharToUint8_t(AppBefehl[1])*256+_hexcharToUint8_t(AppBefehl[2])*16+_hexcharToUint8_t(AppBefehl[3]);
-    
+    speed    = _hexcharToUint8_t(*(_AppBefehl+6))*16+_hexcharToUint8_t(*(_AppBefehl+7));
+    frequenz = _hexcharToUint8_t(*(_AppBefehl+3))*256+_hexcharToUint8_t(*(_AppBefehl+4))*16+_hexcharToUint8_t(*(_AppBefehl+5));
     (speed > 200)? speed = 200:speed = speed;
-    (frequenz > 20000)? frequenz = 25000: frequenz = frequenz;
-
-    Serial.print("Eingestellte Frequenz: "); Serial.println(frequenz);
-    Serial.print("Eingestellte Geschwindigkeit: "); Serial.println(speed);
-    //ledcSetup(0, frequenz, speed);
+    (frequenz > 25000)? frequenz = 25000: frequenz = frequenz;
+    //Serial.print("Eingestellte Frequenz: "); Serial.println(frequenz);
+    //Serial.print("Eingestellte Geschwindigkeit: "); Serial.println(speed);
+    ledcSetup(0, frequenz, speed);
 }
 
 

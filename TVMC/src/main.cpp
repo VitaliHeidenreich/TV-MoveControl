@@ -161,10 +161,10 @@ void loop()
     }
 
     //SerialBT.available()
-    if (Serial.available())
+    if (SerialBT.available())
     {
         // (char)SerialBT.read()
-        appinterpreter.readCommandCharFromApp( (char)Serial.read() );
+        appinterpreter.readCommandCharFromApp( (char)SerialBT.read()/*(char)Serial.read()*/ );
     }
     
 
