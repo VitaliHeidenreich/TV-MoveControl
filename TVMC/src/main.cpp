@@ -41,7 +41,7 @@ void setup()
     Led->clear();
 
     if (!SerialBT.begin("MyTV_TEST")){
-        Serial.println("An error occurred initializing Bluetooth");
+        //Serial.println("An error occurred initializing Bluetooth");
     }
 
     // Timer Funktionen
@@ -154,11 +154,9 @@ void loop()
     {
         InOut.setMotorSpeed( 0 );
     }
-
-    //SerialBT.available()
+    
     if (SerialBT.available())
     {
-        // (char)SerialBT.read()
-        appinterpreter.readCommandCharFromApp( (char)SerialBT.read()/*(char)Serial.read()*/ );
+        appinterpreter.readCommandCharFromApp( (char)SerialBT.read() );
     }
 }

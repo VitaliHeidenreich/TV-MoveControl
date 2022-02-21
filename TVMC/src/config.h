@@ -38,8 +38,8 @@
 // Einlesen und steuern TV Zustand
 #define TVPIN   35
 #define TV_MEASNUMB   1000
-#define TVONVALUE 1400
-#define TVOFFVALUE 1380
+#define TVONVALUE 1405
+#define TVOFFVALUE 1390
 
 
 // Over Current Protection Motor
