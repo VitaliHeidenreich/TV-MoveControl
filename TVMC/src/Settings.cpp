@@ -2,19 +2,16 @@
 #include "Settings.h"
 #include <EEPROM.h>
 
-pixel_t Settings::_Color = {100,100,100};
-uint8_t Settings::_AutoMove = 0;
-uint8_t Settings::_ManMoveDir = 0;
-uint8_t Settings::moveEna = 1;
+pixel_t Settings::_Color        = {100,100,100};
+uint8_t Settings::_AutoMove     = 1;
+uint8_t Settings::_ManMoveDir   = 0;
+uint8_t Settings::initTimeOver  = 0;
 
 #define EEPROM_SIZE 4
 
 Settings::Settings()
 {
-        _Color.red = 0;
-        _Color.green = 0;
-        _Color.blue = 0;
-
+        _Color = {0,0,0};
         EEPROM.begin(EEPROM_SIZE);
 }
 
@@ -38,18 +35,6 @@ pixel_t Settings::getColor()
     return Settings::_Color;
 }
 
-/****************************************
- * LED Helligkeit
- ***************************************/
-void Settings::setBrightnessPercent(byte Brightness)
-{
-    Settings::_Brightness = map(Brightness, 0, 100, 0, 255);
-}
-
-byte Settings::getBrightnessPercent()
-{
-    return map(Settings::_Brightness, 0, 255, 0, 100);
-}
 
 uint8_t Settings::blinkCollision(uint8_t on)
 {
@@ -85,7 +70,7 @@ void Settings::startUpTimer()
 {
     static uint16_t tikz = 0;
     if( tikz >= 300 )
-        moveEna = 1;
+        initTimeOver = 1;
     else
         tikz ++;
 }

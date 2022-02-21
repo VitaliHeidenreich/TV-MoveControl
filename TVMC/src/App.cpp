@@ -86,7 +86,7 @@ uint8_t App::readCommandCharFromApp(char CommandChar)
         // Geschwindigkeit und Frequenz einstellen (Inits werden in der config.h angegeben)
         // XXXX [Frequency 0-25000] XX [Speed 0-200]
         case 'S':
-                justSendTheFoundStringToSerial(_AppBefehlBuffer);
+                //justSendTheFoundStringToSerial(_AppBefehlBuffer);
                 setFrequenzAndSpeed( _AppBefehlBuffer );
             break;
         // Reset collision detected state by the app

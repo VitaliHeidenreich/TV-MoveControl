@@ -8,13 +8,9 @@
 #include "WS2812B.h"
 #include "time.h"
 
-//0F903A
-
 WS2812 *Led;
 mypins InOut;
 Settings st;
-
-static uint32_t anzeiger = 0;
 
 hw_timer_t * timer = NULL;
 hw_timer_t * testTimer = NULL;
@@ -86,8 +82,8 @@ void loop()
             {
                 Led->setAllPixels(st.getColor());
                 Led->show();
-                InOut.colorchanged = 0;
                 st.saveActColor( );
+                InOut.colorchanged = 0;
             }
             InOut.collisionDetected = InOut.getFiltMotCurrent();
             lastStateCollision = 0;
@@ -101,7 +97,7 @@ void loop()
      * solange keine Kollision erkannt wurde und die Startzeit abgewartet wurde:
      * Bewege den Fernseher falls nötig / gewünscht
      *********************************************************************/
-    if( !InOut.collisionDetected && st.moveEna )
+    if( !InOut.collisionDetected && st.initTimeOver )
     {
         // Automatisches Verfahren des Fernsehers
         if( st._AutoMove ) // Initial nicht aktiv
@@ -130,11 +126,11 @@ void loop()
         {
             // Manuelles Verfahren des Fernsehers
             // wenn 0, dann ist keine Richtung in der App gewählt
-            if(st._ManMoveDir || !InOut.getTestPinState() )
+            if( st._ManMoveDir )
             {
                 dirOut = InOut.setMotorDir( (st._ManMoveDir == 2) ? 0 : 1 );
 
-                if( ( (OUT_SENSSTATE)&&(dirOut==1) ) || ( (IN_SENSSTATE)&&((dirOut==0) ) ) || !InOut.getTestPinState() )
+                if(((OUT_SENSSTATE)&&(dirOut==1)) || ((IN_SENSSTATE)&&(dirOut==0)))
                 {
                     // Korrektur der Geschwindigkeiten
                     if(dirOut)
@@ -157,7 +153,6 @@ void loop()
     else
     {
         InOut.setMotorSpeed( 0 );
-        InOut.setOnboardLed( 1 );
     }
 
     //SerialBT.available()
@@ -166,11 +161,4 @@ void loop()
         // (char)SerialBT.read()
         appinterpreter.readCommandCharFromApp( (char)SerialBT.read()/*(char)Serial.read()*/ );
     }
-    
-
-    // if( senderTrigger >= 100 )
-    // {
-    //     Serial.println((anzeiger++));  
-    //     senderTrigger = 0;
-    // }
 }

@@ -13,12 +13,6 @@ public:
         Settings();
 
         /****************************************
-         * LED Helligkeit
-         ***************************************/
-        void setBrightnessPercent(byte Brightness);
-        byte getBrightnessPercent();
-
-        /****************************************
          * LED Farbe
          ***************************************/
         void setColor(pixel_t color);
@@ -30,7 +24,7 @@ public:
         static uint8_t _ManMoveDir;
 
         // Freigabe der Steuerung nach einer Definierten Zeit beim Aufstart
-        static uint8_t moveEna;
+        static uint8_t initTimeOver;
         void startUpTimer( void );
 
         // Speichern der Angaben auf den EEPROM
@@ -38,7 +32,6 @@ public:
         void getSavedColor( void );
 
 private:
-        static byte _Brightness;
         static pixel_t _Color;
         static uint8_t _x;
 };
