@@ -100,53 +100,28 @@ void loop()
     if( !InOut.collisionDetected && st.initTimeOver )
     {
         // Automatisches Verfahren des Fernsehers
-        if( st._AutoMove ) // Initial nicht aktiv
-        {
+        if( !st._AutoMove ) // Initial nicht aktiv 
+            dirOut = InOut.setMotorDir( (st._ManMoveDir == 2) ? 0 : 1 );
+        else
             dirOut = InOut.setMotorDir( tvState );  // ToDo: change InOut.getTestPinState() to "tvState" 
+           
 
-            /**********************************************************************
-             * Ist-Position des Fernstehers feststellen und Abgleich mit dem Soll
-             * * Out-Stopp ist    ET2
-             * * In-Stopp ist     ET1
-             *********************************************************************/
-            if(((( OUT_SENSSTATE ) && ( dirOut==1 )) || (( IN_SENSSTATE ) && ( dirOut==0 ))))
-            {
-                // Korrektur der Geschwindigkeiten
-                if(dirOut)
-                    InOut.setMotorSpeed( MAX_PWM - 10 );
-                else
-                    InOut.setMotorSpeed( MAX_PWM );
-            }
+        /**********************************************************************
+         * Ist-Position des Fernstehers feststellen und Abgleich mit dem Soll
+         * * Out-Stopp ist    ET2       Ausführung als Schließer
+         * * In-Stopp ist     ET1       Ausführung als Schließer
+         *********************************************************************/
+        if((( OUT_SENSSTATE ) && ( dirOut==1 )) || (( IN_SENSSTATE ) && ( dirOut==0 )))
+        {
+            // Korrektur der Geschwindigkeiten
+            if(dirOut)
+                InOut.setMotorSpeed( MAX_PWM - 10 );
             else
-            {
-                InOut.setMotorSpeed( 0 );
-            }
+                InOut.setMotorSpeed( MAX_PWM );
         }
         else
         {
-            // Manuelles Verfahren des Fernsehers
-            // wenn 0, dann ist keine Richtung in der App gewählt
-            if( st._ManMoveDir )
-            {
-                dirOut = InOut.setMotorDir( (st._ManMoveDir == 2) ? 0 : 1 );
-
-                if(((OUT_SENSSTATE)&&(dirOut==1)) || ((IN_SENSSTATE)&&(dirOut==0)))
-                {
-                    // Korrektur der Geschwindigkeiten
-                    if(dirOut)
-                        InOut.setMotorSpeed( MAX_PWM - 10  );
-                    else
-                        InOut.setMotorSpeed( MAX_PWM );
-                }
-                else
-                {
-                    InOut.setMotorSpeed( 0 );
-                }
-            }
-            else
-            {
-                InOut.setMotorSpeed( 0 );
-            }
+            InOut.setMotorSpeed( 0 );
         }
     }
     // Collision detected
@@ -155,6 +130,7 @@ void loop()
         InOut.setMotorSpeed( 0 );
     }
     
+    // Einlesen des Inputstreams
     if (SerialBT.available())
     {
         appinterpreter.readCommandCharFromApp( (char)SerialBT.read() );
