@@ -11,35 +11,31 @@
 #define SERIAL_SPEED 115200
 
  
-#define TVSTATE 5
+#define TVSTATE         5
 //Endstipps
-#define ET1     16
-#define ET2     4
+#define ET1             16
+#define ET2             4
 // Motoren
-// #define EN_A    13
-#define EN_B    25
-// #define IN_2A   26
-// #define IN_1A   27
-#define IN_2B   14
-#define IN_1B   12
+#define DRK             25
+#define BRK             12
 // Test Pin
-#define TESTPIN 23
+#define TESTPIN         23
 
 // LED
-#define LED_PIN 2
-#define LED_IN  18
-#define LED_OUT 19
+#define LED_PIN         2
+#define LED_IN          18
+#define LED_OUT         19
 
 // Weitere Parameter
-#define FREQUENZ 30
-#define AUFLOESUNG 8
-#define MAX_PWM  80
+#define FREQUENZ        30
+#define AUFLOESUNG      8
+#define MAX_PWM         80
 
 // Einlesen und steuern TV Zustand
-#define TVPIN   35
-#define TV_MEASNUMB   1000
-#define TVONVALUE 1405
-#define TVOFFVALUE 1390
+#define TVPIN           35
+#define TV_MEASNUMB     1000
+#define TVONVALUE       1405
+#define TVOFFVALUE      1390
 
 
 // Over Current Protection Motor

@@ -18,13 +18,10 @@ mypins::mypins()
     // Motor 1 und 2 Enabler
     ledcSetup(0, FREQUENZ, AUFLOESUNG);
     // ledcAttachPin(EN_A, 0);
-    ledcAttachPin(EN_B, 0);
+    ledcAttachPin(BRK, 0);
 
     // Richtungspins auf Ausgang schalten
-    // pinMode(IN_1A, OUTPUT);
-    // pinMode(IN_2A, OUTPUT);
-    pinMode(IN_1B, OUTPUT);
-    pinMode(IN_2B, OUTPUT);
+    pinMode(DRK, OUTPUT);
 
     // Test Taste (Nur zum Testen)
     pinMode(TESTPIN,INPUT_PULLUP);
@@ -43,15 +40,13 @@ uint8_t mypins::setMotorDir( uint8_t dir )
      if( dir )
      {
         // Fernseher ausfahren
-        digitalWrite(IN_1B, 0);
-        digitalWrite(IN_2B, 1);
+        digitalWrite(DRK, 0);
         return 1;
      }
      else
      {
         // Fernseher einfahren
-        digitalWrite(IN_1B, 1);
-        digitalWrite(IN_2B, 0);
+        digitalWrite(DRK, 1);
         return 0;
      }
 }
