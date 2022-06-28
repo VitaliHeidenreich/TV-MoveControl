@@ -8,27 +8,29 @@ uint32_t mypins::iMit = 2180;
 
 mypins::mypins()
 {
-    // Fernseher-USB-Stecker
-    pinMode(TVSTATE, INPUT);
+    // Test pin
+    pinMode(TESTBUTTON, INPUT_PULLUP);
 
     // Eingang Entstopps
     pinMode(ET1, INPUT);
     pinMode(ET2, INPUT);
 
-    // Motor 1 und 2 Enabler
-    ledcSetup(0, FREQUENZ, AUFLOESUNG);
-    // ledcAttachPin(EN_A, 0);
-    ledcAttachPin(BRK, 0);
-
     // Richtungspins auf Ausgang schalten
     pinMode(DRK, OUTPUT);
+    pinMode(BRK, OUTPUT);
+
+    #if MOT_CONT_PR == 0
+        // Motor PWM
+        ledcSetup(0, FREQUENZ, AUFLOESUNG);
+        ledcWrite(0, 0);
+        ledcAttachPin(BRK, 0);
+    #endif
 
     // Test Taste (Nur zum Testen)
     pinMode(TESTPIN,INPUT_PULLUP);
 
     // Ueberwachungs-LEDs als Ausgang
-    pinMode(LED_IN,  OUTPUT);
-    pinMode(LED_OUT, OUTPUT);
+    pinMode(LED_MOT_ON, OUTPUT);
 
     // Motor current meassurement pin
     pinMode(CURRENTMEASPIN, INPUT);
@@ -37,37 +39,49 @@ mypins::mypins()
 
 uint8_t mypins::setMotorDir( uint8_t dir )
 {
-     if( dir )
-     {
+    if ( getTestPinState() )
+    {
+        (dir == 1) ? dir = 0 : dir = 1;
+    }
+
+    if( dir )
+    {
         // Fernseher ausfahren
         digitalWrite(DRK, 0);
         return 1;
-     }
-     else
-     {
+    }
+    else
+    {
         // Fernseher einfahren
         digitalWrite(DRK, 1);
         return 0;
-     }
+    }
 }
 
 uint8_t mypins::getTestPinState( void )
 {
-    return (digitalRead(TESTPIN));
-}
-
-void mypins::setOnboardLed( uint8_t ledState )
-{
-    if(!ledState)
-        digitalWrite(LED_OUT, 1);
-    else
-        digitalWrite(LED_OUT, 0);
+    return (digitalRead(TESTBUTTON));
 }
 
 // Zum Einstellen der Motorgeschwindigkeit (beide Motoren, falls vorhanden)
-void mypins::setMotorSpeed( uint8_t speed )
+void mypins::setMotorSpeed( uint16_t speed )
 {
-    ledcWrite(0, speed);
+    #if MOT_CONT_PR == 1
+        if( speed )
+        {
+            digitalWrite(BRK, 1);
+            mypins::setOnboardLed( 1 );
+        }
+        else
+        {
+            digitalWrite(BRK, 0);
+            mypins::setOnboardLed( 0 );
+        }
+    #else
+        (speed > 255) ?  speed = 255 : speed = speed;
+        ledcWrite(0, speed);
+        (speed == 0) ? digitalWrite(LED_MOT_ON, 0): digitalWrite(LED_MOT_ON, 1);
+    #endif
 }
 
 uint32_t mypins::getTVstate( void )
@@ -79,9 +93,7 @@ uint32_t mypins::getTVstate( void )
     // Read analog value
     // Befüllung des Ringbuffers (kopieren von vorne nach hinten, beginnend am Ende)
     for (uint32_t i = (TV_MEASNUMB - 1); i > 0; i--)
-    {
         myVal[i] = myVal[i - 1];
-    }
 
     // Neues Zeichen in den Buffer[0] schieben
     myVal[0] = analogRead(TVPIN);
@@ -93,8 +105,11 @@ uint32_t mypins::getTVstate( void )
 
     if(z >= TV_MEASNUMB)
         z=1;
-    //if(z==(TV_MEASNUMB - 1))
-    //    Serial.println(iMit);
+    
+    #if DEBUG
+        if(z==(TV_MEASNUMB - 1))
+        Serial.print("Fernsehlast: "); Serial.println(iMit);
+    #endif
     
     z++;
 
@@ -113,7 +128,9 @@ uint8_t mypins::getFiltMotCurrent()
     static uint16_t currentValues[CURRENTNUMVAL] = {0};
     uint32_t medianCValue = 0;
 
-    //static uint8_t test = 0;
+    #if DEBUG
+        static uint8_t test = 0;
+    #endif
 
     //Befüllung des Ringbuffers (kopieren von vorne nach hinten, beginnend am Ende)
     for (uint8_t i = (CURRENTNUMVAL - 1); i > 0; i--)
@@ -129,15 +146,18 @@ uint8_t mypins::getFiltMotCurrent()
     {
         medianCValue += currentValues[i];
     }
+
     medianCValue /= CURRENTNUMVAL;
 
-//to del
-    // if( test == 9)
-    //     Serial.println(medianCValue);
-    // test ++;
-    // if( test >= 10 )
-    //     test = 0;
-// end del
+    #if DEBUG
+        if( test == 9)
+        {
+            Serial.print("Motorstrom: ");Serial.println(medianCValue);
+        } 
+        test ++;
+        if( test >= 10 )
+            test = 0;
+    #endif
     
     // testing the measured median val
     if( OVERCURDETVAL <= medianCValue )

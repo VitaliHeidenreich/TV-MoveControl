@@ -35,6 +35,14 @@ void IRAM_ATTR onTimer()
 void setup()
 {
     Serial.begin(115200);
+
+    // Timer Funktionen
+    event = 0;
+    timer = timerBegin(1, 80, true);
+    timerAttachInterrupt(timer, &onTimer, true);
+    timerAlarmWrite(timer, 10000, true);
+    timerAlarmEnable(timer);
+
     InOut = mypins();
     Led = new WS2812((gpio_num_t)LED_PIN,112);
     st = Settings();
@@ -43,13 +51,6 @@ void setup()
     if (!SerialBT.begin("MyTV_TEST")){
         //Serial.println("An error occurred initializing Bluetooth");
     }
-
-    // Timer Funktionen
-    event = 0;
-    timer = timerBegin(0, 80, true);
-    timerAttachInterrupt(timer, &onTimer, true);
-    timerAlarmWrite(timer, 10000, true);
-    timerAlarmEnable(timer);
     
     st.getSavedColor( );
     Serial.println("ESP32 gestartet.");
@@ -113,17 +114,13 @@ void loop()
          *********************************************************************/
         if((( OUT_SENSSTATE ) && ( dirOut==1 )) || (( IN_SENSSTATE ) && ( dirOut==0 )))
         {
-            // Korrektur der Geschwindigkeiten
-            if(dirOut)
-                InOut.setMotorSpeed( MAX_PWM - 10 );
-            else
-                InOut.setMotorSpeed( MAX_PWM );
+            InOut.setMotorSpeed( 100 );
         }
         else
         {
             InOut.setMotorSpeed( 0 );
         }
-    }
+    } 
     // Collision detected
     else
     {

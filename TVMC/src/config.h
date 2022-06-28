@@ -11,7 +11,7 @@
 #define SERIAL_SPEED 115200
 
  
-#define TVSTATE         5
+#define TESTBUTTON      5
 //Endstipps
 #define ET1             16
 #define ET2             4
@@ -24,12 +24,17 @@
 // LED
 #define LED_PIN         2
 #define LED_IN          18
-#define LED_OUT         19
+#define LED_MOT_ON      19
+
+// Motoransteuerungsvarianten
+// 1 Blockansteuerung
+// 0 PWM
+#define MOT_CONT_PR     0
 
 // Weitere Parameter
-#define FREQUENZ        30
+#define FREQUENZ        120
 #define AUFLOESUNG      8
-#define MAX_PWM         80
+#define MAX_PWM         255
 
 // Einlesen und steuern TV Zustand
 #define TVPIN           35
@@ -42,6 +47,9 @@
 #define CURRENTMEASPIN  34
 #define CURRENTNUMVAL   30
 #define OVERCURDETVAL   1920
+
+// Debug switch
+#define DEBUG           0
 
 
 /***************************************************************************
