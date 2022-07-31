@@ -5,6 +5,11 @@
 uint8_t mypins::collisionDetected = 0;
 uint8_t mypins::colorchanged = 1;
 uint32_t mypins::iMit = 2180;
+uint32_t mypins::ActualStepTVBoard = 0;
+
+uint8_t mypins::direction = 0;
+
+
 
 mypins::mypins()
 {
@@ -37,24 +42,59 @@ mypins::mypins()
     pinMode(TVPIN, ANALOG);
 }
 
+uint8_t mypins::rangeCheck( uint8_t dirOut )
+{
+    uint8_t iRet = 1;
+    if ( ((dirOut == 1) && (mypins::ActualStepTVBoard >= MAX_STEP_TV)) || ((dirOut == 0) && (mypins::ActualStepTVBoard == 0)) )
+        iRet = 0;
+    return iRet;
+}
+
+/**
+ * @brief dir == 1 --> OUT
+ * 
+ * @param dir 
+ * @return uint8_t 
+ */
 uint8_t mypins::setMotorDir( uint8_t dir )
 {
     if ( getTestPinState() )
-    {
         (dir == 1) ? dir = 0 : dir = 1;
-    }
 
     if( dir )
     {
         // Fernseher ausfahren
-        digitalWrite(DRK, 0);
-        return 1;
+        digitalWrite(DRK, 0); 
+        direction = 1;
     }
     else
     {
         // Fernseher einfahren
         digitalWrite(DRK, 1);
-        return 0;
+        direction = 0;
+    }
+    return direction;
+}
+
+uint8_t mypins::getDynamicMotorSpeed()
+{
+    int32_t a, b;
+    // Stepps for full drive
+    if( (mypins::ActualStepTVBoard <= (MAX_STEP_TV/4)) )
+    {
+        a = (MAX_SPEED - MIN_SPEED)/(MAX_STEP_TV/4);
+        b = MIN_SPEED;
+        return (a * mypins::ActualStepTVBoard + b);
+    }
+    else if( (mypins::ActualStepTVBoard >= (MAX_STEP_TV/4*3)) )
+    {
+        a = - (MAX_SPEED - MIN_SPEED)/(MAX_STEP_TV/4);
+        b = MIN_SPEED + 4 * (MAX_SPEED - MIN_SPEED);
+        return (a * mypins::ActualStepTVBoard + b);
+    }
+    else
+    {
+        return MAX_SPEED;
     }
 }
 
@@ -106,7 +146,7 @@ uint32_t mypins::getTVstate( void )
     if(z >= TV_MEASNUMB)
         z=1;
     
-    #if DEBUG
+    #if DEBUG == 1
         if(z==(TV_MEASNUMB - 1))
         Serial.print("Fernsehlast: "); Serial.println(iMit);
     #endif
@@ -128,7 +168,7 @@ uint8_t mypins::getFiltMotCurrent()
     static uint16_t currentValues[CURRENTNUMVAL] = {0};
     uint32_t medianCValue = 0;
 
-    #if DEBUG
+    #if DEBUG == 1
         static uint8_t test = 0;
     #endif
 
@@ -149,7 +189,7 @@ uint8_t mypins::getFiltMotCurrent()
 
     medianCValue /= CURRENTNUMVAL;
 
-    #if DEBUG
+    #if DEBUG == 1
         if( test == 9)
         {
             Serial.print("Motorstrom: ");Serial.println(medianCValue);

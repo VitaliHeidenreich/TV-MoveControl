@@ -17,6 +17,24 @@ hw_timer_t * testTimer = NULL;
 portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 uint8_t event;
 uint8_t senderTrigger = 0;
+#if DEBUG == 2
+    uint8_t semaphore = 1;
+#endif
+
+
+void IRAM_ATTR Ext_INT1_ISR()
+{
+    if(mypins::direction == 1)
+    {
+        if( mypins::ActualStepTVBoard < MAX_STEP_TV )
+            mypins::ActualStepTVBoard ++;
+    }
+    else
+    {
+        if( mypins::ActualStepTVBoard > 0 )
+            mypins::ActualStepTVBoard --;
+    }
+}
 
 /***************************************************************************
  * Anlegen der Peripherie Instanzen
@@ -51,11 +69,13 @@ void setup()
     if (!SerialBT.begin("MyTV_TEST")){
         //Serial.println("An error occurred initializing Bluetooth");
     }
+
+    pinMode(INTERRUPT_PIN, INPUT);
+    attachInterrupt(INTERRUPT_PIN, Ext_INT1_ISR, RISING);
     
     st.getSavedColor( );
     Serial.println("ESP32 gestartet.");
 }
-
 
 void loop()
 { 
@@ -112,15 +132,31 @@ void loop()
          * * Out-Stopp ist    ET2       Ausführung als Schließer
          * * In-Stopp ist     ET1       Ausführung als Schließer
          *********************************************************************/
-        if((( OUT_SENSSTATE ) && ( dirOut==1 )) || (( IN_SENSSTATE ) && ( dirOut==0 )))
+        if((( OUT_SENSSTATE ) && ( dirOut==1 ) && InOut.rangeCheck(dirOut)) || (( IN_SENSSTATE ) && ( dirOut==0 ) && InOut.rangeCheck(dirOut)))
         {
-            InOut.setMotorSpeed( 100 );
+            InOut.setMotorSpeed( MAX_SPEED );
+            #if DEBUG == 2
+            if( semaphore == 1 )
+            {
+                semaphore = 0;
+            }
+            #endif
         }
         else
         {
             InOut.setMotorSpeed( 0 );
+            #if DEBUG == 2
+                if( semaphore == 0 )
+                {
+                    Serial.print("End Steps: ");
+                    Serial.print(InOut.ActualStepTVBoard);
+                    Serial.print(" DirOut: ");
+                    Serial.println(dirOut);
+                    semaphore = 1;
+                }
+            #endif
         }
-    } 
+    }
     // Collision detected
     else
     {

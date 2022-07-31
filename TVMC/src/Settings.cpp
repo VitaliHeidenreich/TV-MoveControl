@@ -69,7 +69,7 @@ uint8_t Settings::blinkCollision(uint8_t on)
 void Settings::startUpTimer()
 {
     static uint16_t tikz = 0;
-    if( tikz >= 300 )
+    if( tikz >= 100 )
         initTimeOver = 1;
     else
         tikz ++;

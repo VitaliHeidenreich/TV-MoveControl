@@ -191,7 +191,7 @@ void App::CommSetTime(char AppBefehl[6])
 
 void App::setFrequenzAndSpeed( char *_AppBefehl )
 {
-    uint32_t speed = MAX_PWM;
+    uint32_t speed = MAX_SPEED;
     uint32_t frequenz = FREQUENZ;
 
     speed    = _hexcharToUint8_t(*(_AppBefehl+6))*16+_hexcharToUint8_t(*(_AppBefehl+7));

@@ -17,7 +17,14 @@ class mypins {
         void setMotorSpeed( uint16_t s );
         uint32_t getTVstate( void );
         uint8_t getFiltMotCurrent();
+        uint8_t getDynamicMotorSpeed();
+
+        uint8_t rangeCheck( uint8_t dirOut );
+
         static uint8_t collisionDetected;
         static uint8_t colorchanged;
         static uint32_t iMit;
+        static uint8_t direction;
+
+        static uint32_t ActualStepTVBoard;
 };
