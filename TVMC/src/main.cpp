@@ -77,11 +77,12 @@ void setup()
     Serial.println("ESP32 gestartet.");
 }
 
+static uint8_t dirOut = 0;
+static uint8_t tvState = 0;
+static uint8_t lastStateCollision = 1;
+
 void loop()
 { 
-  static uint8_t dirOut = 0;
-  static uint8_t tvState = 0;
-  static uint8_t lastStateCollision = 1;
   /**********************************************************************
    * solange keine Kollision erkannt wurde:
    * Den Zustand des Fernsehers feststellen und einstellen der Richtung
