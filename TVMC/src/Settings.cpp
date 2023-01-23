@@ -81,6 +81,7 @@ void Settings::getSavedColor( void )
     setColor(EEPROM.read(0),EEPROM.read(1),EEPROM.read(2));
 }
 
+
 void Settings::saveActColor( )
 {
     //Zum Testen

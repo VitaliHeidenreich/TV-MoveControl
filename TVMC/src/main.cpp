@@ -21,7 +21,6 @@ uint8_t senderTrigger = 0;
     uint8_t semaphore = 1;
 #endif
 
-
 void IRAM_ATTR Ext_INT1_ISR()
 {
     if(mypins::direction == 1)
@@ -36,9 +35,9 @@ void IRAM_ATTR Ext_INT1_ISR()
     }
 }
 
-/***************************************************************************
+/******************************************************************************************
  * Anlegen der Peripherie Instanzen
- **************************************************************************/
+ *****************************************************************************************/
 BluetoothSerial SerialBT;
 App appinterpreter;
  
@@ -79,15 +78,14 @@ void setup()
 
 static uint8_t dirOut = 0;
 static uint8_t tvState = 0;
-static uint8_t lastStateCollision = 1;
 
 void loop()
 { 
-  /**********************************************************************
+  /*************************************************************************************
    * solange keine Kollision erkannt wurde:
    * Den Zustand des Fernsehers feststellen und einstellen der Richtung
    * Abfrage erfolgt alle 500ms
-   *********************************************************************/
+   ************************************************************************************/
   
     // Eventgetriggerte Steuerung der Bewegung und der LEDs
     if( event )
@@ -98,7 +96,7 @@ void loop()
 
         // Also set leds
         // LED Steuerung R/G/B
-        if( !InOut.collisionDetected || lastStateCollision )
+        if( !InOut.collisionDetected )
         {
             if( InOut.colorchanged )
             {
@@ -108,31 +106,35 @@ void loop()
                 InOut.colorchanged = 0;
             }
             InOut.collisionDetected = InOut.getFiltMotCurrent();
-            lastStateCollision = 0;
+        }
+        else
+        {
+            Led->setAllPixels({255,0,0});
+            Led->show();
         }
 
-        senderTrigger ++;
+        senderTrigger ++;  // Braucht man das noch ???
         event = 0;
     }
     
-    /**********************************************************************
+    /*************************************************************************************
      * solange keine Kollision erkannt wurde und die Startzeit abgewartet wurde:
      * Bewege den Fernseher falls nötig / gewünscht
-     *********************************************************************/
+     ************************************************************************************/
     if( !InOut.collisionDetected && st.initTimeOver )
     {
         // Automatisches Verfahren des Fernsehers
-        if( !st._AutoMove ) // Initial nicht aktiv 
-            dirOut = InOut.setMotorDir( (st._ManMoveDir == 2) ? 0 : 1 );
+        if( st._AutoMove ) 
+            dirOut = InOut.setMotorDir( tvState );  // Test for steps: change "tvState" to InOut.getTestPinState()
+        // Manuelles Verfahren des Fernsehers - Initial nicht aktiv 
         else
-            dirOut = InOut.setMotorDir( tvState );  // ToDo: change InOut.getTestPinState() to "tvState" 
-           
+            dirOut = InOut.setMotorDir( (st._ManMoveDir == 2) ? 0 : 1 );
 
-        /**********************************************************************
+        /*************************************************************************************
          * Ist-Position des Fernstehers feststellen und Abgleich mit dem Soll
          * * Out-Stopp ist    ET2       Ausführung als Schließer
          * * In-Stopp ist     ET1       Ausführung als Schließer
-         *********************************************************************/
+         ************************************************************************************/
         if((( OUT_SENSSTATE ) && ( dirOut==1 ) && InOut.rangeCheck(dirOut)) || (( IN_SENSSTATE ) && ( dirOut==0 ) && InOut.rangeCheck(dirOut)))
         {
             InOut.setMotorSpeed( MAX_SPEED );
@@ -170,3 +172,8 @@ void loop()
         appinterpreter.readCommandCharFromApp( (char)SerialBT.read() );
     }
 }
+
+/************************************************************************************************/
+/************************************************************************************************/
+/************************************************************************************************/
+/************************************************************************************************/
