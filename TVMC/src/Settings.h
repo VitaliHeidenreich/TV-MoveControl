@@ -31,8 +31,19 @@ public:
         void saveActColor( void );
         void getSavedColor( void );
 
+        // Settings for collision limit
+        void saveUpperCollisionADCValue( uint16_t val );
+        uint16_t getSavedUpperCollisionADCValue( void );
+
+        void saveUpperTurnOnValue( uint16_t val );
+        uint16_t getSavedUpperTurnOnValue( void );
+
+        void saveLowerTurnOffValue( uint16_t val );
+        uint16_t getSavedLowerTurnOffValue( void );
+
 private:
         static pixel_t _Color;
+        static uint16_t _UpperCollisionADCValue;
         static uint8_t _x;
 };
 

@@ -17,9 +17,6 @@ hw_timer_t * testTimer = NULL;
 portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 uint8_t event;
 uint8_t senderTrigger = 0;
-#if DEBUG == 2
-    uint8_t semaphore = 1;
-#endif
 
 void IRAM_ATTR Ext_INT1_ISR()
 {
@@ -57,7 +54,7 @@ void setup()
     event = 0;
     timer = timerBegin(1, 80, true);
     timerAttachInterrupt(timer, &onTimer, true);
-    timerAlarmWrite(timer, 10000, true);
+    timerAlarmWrite(timer, 20000, true);
     timerAlarmEnable(timer);
 
     InOut = mypins();
@@ -65,7 +62,8 @@ void setup()
     st = Settings();
     Led->clear();
 
-    if (!SerialBT.begin("MyTV_TEST")){
+    if (!SerialBT.begin("MyTV_Movit_V2"))
+    {
         //Serial.println("An error occurred initializing Bluetooth");
     }
 
@@ -73,7 +71,7 @@ void setup()
     attachInterrupt(INTERRUPT_PIN, Ext_INT1_ISR, RISING);
     
     st.getSavedColor( );
-    Serial.println("ESP32 gestartet.");
+    // Serial.println("ESP32 gestartet.");
 }
 
 static uint8_t dirOut = 0;
@@ -90,6 +88,17 @@ void loop()
     // Eventgetriggerte Steuerung der Bewegung und der LEDs
     if( event )
     {
+        // Einlesen des Inputstreams
+        if (SerialBT.available())
+        {
+            appinterpreter.readCommandCharFromApp( (char)SerialBT.read() );
+        }
+        // Einlesen des Inputstreams
+        if (Serial.available())
+        {
+            appinterpreter.readCommandCharFromSerial( (char)Serial.read() );
+        }
+
         st.startUpTimer();
 
         tvState = InOut.getTVstate( );
@@ -135,45 +144,15 @@ void loop()
          * * Out-Stopp ist    ET2       Ausführung als Schließer
          * * In-Stopp ist     ET1       Ausführung als Schließer
          ************************************************************************************/
-        if((( OUT_SENSSTATE ) && ( dirOut==1 ) && InOut.rangeCheck(dirOut)) || (( IN_SENSSTATE ) && ( dirOut==0 ) && InOut.rangeCheck(dirOut)))
-        {
-            InOut.setMotorSpeed( MAX_SPEED );
-            #if DEBUG == 2
-            if( semaphore == 1 )
-            {
-                semaphore = 0;
-            }
-            #endif
-        }
+        if((( OUT_SENSSTATE ) && ( dirOut==1 )) || (( IN_SENSSTATE ) && ( dirOut==0 )))
+            InOut.setMotorSpeed( 1 );
         else
-        {
             InOut.setMotorSpeed( 0 );
-            #if DEBUG == 2
-                if( semaphore == 0 )
-                {
-                    Serial.print("End Steps: ");
-                    Serial.print(InOut.ActualStepTVBoard);
-                    Serial.print(" DirOut: ");
-                    Serial.println(dirOut);
-                    semaphore = 1;
-                }
-            #endif
-        }
     }
     // Collision detected
     else
     {
         InOut.setMotorSpeed( 0 );
     }
-    
-    // Einlesen des Inputstreams
-    if (SerialBT.available())
-    {
-        appinterpreter.readCommandCharFromApp( (char)SerialBT.read() );
-    }
 }
-
-/************************************************************************************************/
-/************************************************************************************************/
-/************************************************************************************************/
 /************************************************************************************************/

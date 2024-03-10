@@ -16,6 +16,7 @@ public:
      * App Befehle einlesen
      ***************************************/
      uint8_t readCommandCharFromApp(char CommandChar);
+     uint8_t readCommandCharFromSerial(char CommandChar);
 
      void setCommand(char AppBefehl[6]);
      uint8_t *getCommand();

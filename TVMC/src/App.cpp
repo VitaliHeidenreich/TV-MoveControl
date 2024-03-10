@@ -11,6 +11,79 @@ App::App()
     InOut = new mypins();
 }
 
+int charToInt(char c)
+{
+    return (int)c - 48;
+}
+
+uint8_t App::readCommandCharFromSerial(char CommandChar)
+{
+    uint16_t calcVal = 0;
+    // static Variablen müssen initialisiert werden
+    static char _AppBefehlBuffer[] = {'0', '0', '0', '0', '0', '0', '0', '0', '0', '0'}; //10 Elemente
+    //Befüllung des Ringbuffers (kopieren von vorne nach hinten, beginnend am Ende)
+    for (int i = (10 - 1); i > 0; i--)
+    {
+        _AppBefehlBuffer[i] = _AppBefehlBuffer[i - 1];
+    }
+    // Neues Zeichen in den Buffer[0] schieben
+    _AppBefehlBuffer[0] = CommandChar;
+
+    if ((_AppBefehlBuffer[9] == '!') && (_AppBefehlBuffer[8] == '$') && (_AppBefehlBuffer[1] == '$') && (_AppBefehlBuffer[0] == '!'))
+    {
+        if( _AppBefehlBuffer[7] == 'R' )
+        {
+            Serial.write(" >>> Aktuelles Strom ADC Limit ist: ");
+            Serial.println( settings->getSavedUpperCollisionADCValue() );
+
+            Serial.write(" >>> Aktuelle Einschaltschwelle ist: ");
+            Serial.println( settings->getSavedUpperTurnOnValue() );
+
+            Serial.write(" >>> Aktuelle Ausschaltschwelle ist: ");
+            Serial.println( settings->getSavedLowerTurnOffValue() );
+        }
+        else if( _AppBefehlBuffer[7] == 'T' )
+        {
+            if( InOut->sendCurrentADCValues == 0 )
+                InOut->sendCurrentADCValues = 1;
+            else
+                InOut->sendCurrentADCValues = 0;
+        }
+        else if( _AppBefehlBuffer[7] == 'W' )
+        {
+            calcVal = ( charToInt(_AppBefehlBuffer[5]) * 1000 +
+                            charToInt(_AppBefehlBuffer[4]) * 100 +
+                            charToInt(_AppBefehlBuffer[3]) * 10 +
+                            charToInt(_AppBefehlBuffer[2]) * 1 );
+
+            if(_AppBefehlBuffer[6] == 'C')
+            {
+                settings->saveUpperCollisionADCValue( calcVal );
+                Serial.write(" >>> Neues Strom ADC Limit ist: ");
+                Serial.println( calcVal );
+            }
+            if(_AppBefehlBuffer[6] == 'E')
+            {
+                settings->saveUpperTurnOnValue( calcVal );
+                Serial.write(" >>> Neue Einschaltschwelle ist: ");
+                Serial.println( calcVal );
+            }
+            if(_AppBefehlBuffer[6] == 'A')
+            {
+                settings->saveLowerTurnOffValue( calcVal );
+                Serial.write(" >>> Neue Ausschaltschwelle ist: ");
+                Serial.println( calcVal );
+            }
+        }
+        else
+        {
+            Serial.write(" >>> ERROR_not_command_found\n");
+        }
+    }
+    return 0;
+}
+
+
 /** ===========================================================
  *  | Befehlsstruktur:                                        |
  *  |-----------------+---------------------+-----------------|
@@ -91,9 +164,19 @@ uint8_t App::readCommandCharFromApp(char CommandChar)
             break;
         // Reset collision detected state by the app
         case 'R':
-                    settings->_AutoMove = 1;
-                    InOut->collisionDetected = 0;
-                    iRet = 0;
+                settings->_AutoMove = 1;
+                InOut->collisionDetected = 0;
+                iRet = 0;
+            break;
+        case 'W':
+                SerialBT.write(" >>> Aktuelles Strom ADC Limit ist: ");
+                Serial.println( settings->getSavedUpperCollisionADCValue() );
+
+                Serial.write(" >>> Aktuelle Einschaltschwelle ist: ");
+                Serial.println( settings->getSavedUpperTurnOnValue() );
+
+                Serial.write(" >>> Aktuelle Ausschaltschwelle ist: ");
+                Serial.println( settings->getSavedLowerTurnOffValue() );
             break;
         default:
             iRet = 0;

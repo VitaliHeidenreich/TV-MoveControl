@@ -47,11 +47,11 @@
 
 // Over Current Protection Motor
 #define CURRENTMEASPIN  34
-#define CURRENTNUMVAL   30
-#define OVERCURDETVAL   1920
+#define CURRENTNUMVAL   50
+#define OVERCURDETVAL   1422
 
 // Debug switch
-#define DEBUG           2
+#define DEBUG           1
 
 #define INTERRUPT_PIN   17
 
