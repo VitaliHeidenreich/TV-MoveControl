@@ -2,6 +2,7 @@
 #include "App.h"
 #include "config.h"
 #include "WS2812B.h"
+#include "BluetoothSerial.h"
 
 
 
@@ -37,17 +38,20 @@ uint8_t App::readCommandCharFromSerial(char CommandChar)
             Serial.println( settings->getSavedUpperCollisionADCValue() );
 
             Serial.write(" >>> Aktuelle Einschaltschwelle ist: ");
-            Serial.println( settings->getSavedUpperTurnOnValue() );
-
-            Serial.write(" >>> Aktuelle Ausschaltschwelle ist: ");
-            Serial.println( settings->getSavedLowerTurnOffValue() );
+            Serial.println( settings->getSavedTurnOnValue() );
         }
         else if( _AppBefehlBuffer[7] == 'T' )
         {
             if( InOut->sendCurrentADCValues == 0 )
+            {
                 InOut->sendCurrentADCValues = 1;
+                Serial.println( ">>>>>>> START" );
+            }
             else
+            {
                 InOut->sendCurrentADCValues = 0;
+                Serial.println( ">>>>>>> END" );
+            }
         }
         else if( _AppBefehlBuffer[7] == 'W' )
         {
@@ -64,14 +68,8 @@ uint8_t App::readCommandCharFromSerial(char CommandChar)
             }
             if(_AppBefehlBuffer[6] == 'E')
             {
-                settings->saveUpperTurnOnValue( calcVal );
+                settings->saveTurnOnValue( calcVal );
                 Serial.write(" >>> Neue Einschaltschwelle ist: ");
-                Serial.println( calcVal );
-            }
-            if(_AppBefehlBuffer[6] == 'A')
-            {
-                settings->saveLowerTurnOffValue( calcVal );
-                Serial.write(" >>> Neue Ausschaltschwelle ist: ");
                 Serial.println( calcVal );
             }
         }
@@ -169,14 +167,7 @@ uint8_t App::readCommandCharFromApp(char CommandChar)
                 iRet = 0;
             break;
         case 'W':
-                SerialBT.write(" >>> Aktuelles Strom ADC Limit ist: ");
-                Serial.println( settings->getSavedUpperCollisionADCValue() );
-
-                Serial.write(" >>> Aktuelle Einschaltschwelle ist: ");
-                Serial.println( settings->getSavedUpperTurnOnValue() );
-
-                Serial.write(" >>> Aktuelle Ausschaltschwelle ist: ");
-                Serial.println( settings->getSavedLowerTurnOffValue() );
+                // nop
             break;
         default:
             iRet = 0;

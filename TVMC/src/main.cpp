@@ -90,18 +90,15 @@ void loop()
     {
         // Einlesen des Inputstreams
         if (SerialBT.available())
-        {
             appinterpreter.readCommandCharFromApp( (char)SerialBT.read() );
-        }
+
         // Einlesen des Inputstreams
         if (Serial.available())
-        {
             appinterpreter.readCommandCharFromSerial( (char)Serial.read() );
-        }
 
         st.startUpTimer();
 
-        tvState = InOut.getTVstate( );
+        tvState = InOut.getTVstate( InOut.sendCurrentADCValues );
 
         // Also set leds
         // LED Steuerung R/G/B

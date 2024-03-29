@@ -15,7 +15,7 @@ class mypins {
         uint8_t getTestPinState( );
         void setOnboardLed( uint8_t ledState );
         void setMotorSpeed( uint16_t s );
-        uint32_t getTVstate( void );
+        uint32_t getTVstate( uint8_t setvalADCValaue );
         uint8_t getFiltMotCurrent();
 
         uint8_t rangeCheck( uint8_t dirOut );

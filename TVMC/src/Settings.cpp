@@ -4,6 +4,7 @@
 
 pixel_t Settings::_Color = {100,100,100};
 uint16_t Settings::_UpperCollisionADCValue = 1422;
+uint16_t Settings::_TurnOnCurrentValue = 1405;
 uint8_t Settings::_AutoMove     = 1;
 uint8_t Settings::_ManMoveDir   = 0;
 uint8_t Settings::initTimeOver  = 0;
@@ -12,8 +13,9 @@ uint8_t Settings::initTimeOver  = 0;
 
 Settings::Settings()
 {
-        _Color = {0,0,0};
+        _Color = {100,100,100};
         _UpperCollisionADCValue = 1422;
+        _TurnOnCurrentValue = 1405;
         EEPROM.begin(EEPROM_SIZE);
 }
 
@@ -67,7 +69,6 @@ uint8_t Settings::blinkCollision(uint8_t on)
 /**********************************************************************
  * Beim Aufstart soll eine vorgegebene Zeit abgewartet werden,
  * damit der Stromsensor plausible Werte bekommt
- * VAL 0 1 2
  *********************************************************************/
 void Settings::startUpTimer()
 {
@@ -78,12 +79,14 @@ void Settings::startUpTimer()
         tikz ++;
 }
 
-
+/**********************************************************************
+ * Letzte eingestellte Farbe einlesen und Speichern
+ * NV RAM: 0 1 2
+ *********************************************************************/
 void Settings::getSavedColor( void )
 {
     setColor(EEPROM.read(0),EEPROM.read(1),EEPROM.read(2));
 }
-
 
 void Settings::saveActColor( )
 {
@@ -95,7 +98,7 @@ void Settings::saveActColor( )
 
 /**********************************************************************
  * Einstellen der Kollisionserkennung
- * Vasl 3 4
+ * NV RAM: Val 3 4
  *********************************************************************/
 uint16_t Settings::getSavedUpperCollisionADCValue( void )
 {
@@ -112,34 +115,17 @@ void Settings::saveUpperCollisionADCValue( uint16_t val )
 
 /**********************************************************************
  * Einstellen der Einschaltschwelle
- * Val 5 6
+ * NV RAM: Val 5 6
  *********************************************************************/
-uint16_t Settings::getSavedUpperTurnOnValue( void )
+uint16_t Settings::getSavedTurnOnValue( void )
 {
     return ( (EEPROM.read(5)*100) + EEPROM.read(6) );
 }
 
-void Settings::saveUpperTurnOnValue( uint16_t val )
+void Settings::saveTurnOnValue( uint16_t val )
 {
-    Settings::_UpperCollisionADCValue = val;
+    Settings::_TurnOnCurrentValue = val;
     EEPROM.write(5, (uint8_t)(val/100));
     EEPROM.write(6, val%100);
-    EEPROM.commit(); 
-}
-
-/**********************************************************************
- * Einstellen der Ausschaltschwelle
- * Val 7 8
- *********************************************************************/
-uint16_t Settings::getSavedLowerTurnOffValue( void )
-{
-    return ( (EEPROM.read(7)*100) + EEPROM.read(8) );
-}
-
-void Settings::saveLowerTurnOffValue( uint16_t val )
-{
-    Settings::_UpperCollisionADCValue = val;
-    EEPROM.write(7, (uint8_t)(val/100));
-    EEPROM.write(8, val%100);
     EEPROM.commit(); 
 }
