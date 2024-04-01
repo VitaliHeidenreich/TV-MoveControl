@@ -7,16 +7,19 @@
 #include "BluetoothSerial.h"
 #include "WS2812B.h"
 #include "time.h"
+#include "Zeitmaster.h"
+
+#define LED_COUNT 112
 
 WS2812 *Led;
 mypins InOut;
 Settings st;
+Zeitmaster *pZeit;
 
 hw_timer_t * timer = NULL;
 hw_timer_t * testTimer = NULL;
 portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 uint8_t event;
-uint8_t senderTrigger = 0;
 
 void IRAM_ATTR Ext_INT1_ISR()
 {
@@ -58,24 +61,34 @@ void setup()
     timerAlarmEnable(timer);
 
     InOut = mypins();
-    Led = new WS2812((gpio_num_t)LED_PIN,112);
+    Led = new WS2812((gpio_num_t)LED_PIN,LED_COUNT);
     st = Settings();
-    Led->clear();
+    //Led->clear();
+    Led->setAllPixels({0,0,0});
+    Led->show();
+
+    // Hinzufügen Ecxhtzeituhr
+    pZeit = new Zeitmaster();
 
     if (!SerialBT.begin("MyTV_Movit_V2"))
     {
-        //Serial.println("An error occurred initializing Bluetooth");
+        // nop
     }
 
     pinMode(INTERRUPT_PIN, INPUT);
     attachInterrupt(INTERRUPT_PIN, Ext_INT1_ISR, RISING);
     
+    // Einlesen der NV Werte
     st.getSavedColor( );
-    // Serial.println("ESP32 gestartet.");
+    st.getSavedTurnOnValue( );
+    st.getSavedUpperCollisionADCValue( );
+    Serial.println("TVMC gestartet!");
 }
 
 static uint8_t dirOut = 0;
 static uint8_t tvState = 0;
+static uint8_t iLedCntr = 0;
+static pixel_t targetColor = {0,0,0};
 
 void loop()
 { 
@@ -88,26 +101,26 @@ void loop()
     // Eventgetriggerte Steuerung der Bewegung und der LEDs
     if( event )
     {
-        // Einlesen des Inputstreams
+        // Einlesen des Inputstreams from Bluetooth
         if (SerialBT.available())
             appinterpreter.readCommandCharFromApp( (char)SerialBT.read() );
 
-        // Einlesen des Inputstreams
+        // Einlesen des Inputstreams from Serial
         if (Serial.available())
             appinterpreter.readCommandCharFromSerial( (char)Serial.read() );
 
+        // Startup Timer um zuerst gültige Werte fürs Verfahren zu bekommen
         st.startUpTimer();
 
         tvState = InOut.getTVstate( InOut.sendCurrentADCValues );
 
-        // Also set leds
         // LED Steuerung R/G/B
         if( !InOut.collisionDetected )
         {
             if( InOut.colorchanged )
             {
-                Led->setAllPixels(st.getColor());
-                Led->show();
+                targetColor = st.getColor();
+                iLedCntr = 0;
                 st.saveActColor( );
                 InOut.colorchanged = 0;
             }
@@ -115,11 +128,19 @@ void loop()
         }
         else
         {
-            Led->setAllPixels({255,0,0});
-            Led->show();
+            targetColor = {255,0,0};
+            iLedCntr = 0;
         }
 
-        senderTrigger ++;  // Braucht man das noch ???
+        // change LED color
+        if( iLedCntr < LED_COUNT )
+        {
+            Led->setPixel( iLedCntr, targetColor );
+            Led->show();
+            iLedCntr ++;
+        }
+
+        // Rücksetzen des Events
         event = 0;
     }
     

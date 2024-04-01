@@ -3,6 +3,7 @@
 #include "config.h"
 #include "WS2812B.h"
 #include "BluetoothSerial.h"
+#include <ctype.h>
 
 
 
@@ -17,6 +18,31 @@ int charToInt(char c)
     return (int)c - 48;
 }
 
+// Get help
+uint8_t getHelp(char *c)
+{
+    if( ((*(c+3) == 'H')||(*(c+3) == 'h')) &&
+        ((*(c+2) == 'E')||(*(c+2) == 'e')) &&
+        ((*(c+1) == 'L')||(*(c+1) == 'l')) &&
+        ((*(c+0) == 'P')||(*(c+0) == 'p')) )
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+uint8_t isNumber( char *c)
+{
+    for( int i = 2; i < 5; i++)
+    {
+        if( !isdigit(*(c+i)) )
+            return 0;
+    }
+    return 1;
+}
+
 uint8_t App::readCommandCharFromSerial(char CommandChar)
 {
     uint16_t calcVal = 0;
@@ -29,6 +55,15 @@ uint8_t App::readCommandCharFromSerial(char CommandChar)
     }
     // Neues Zeichen in den Buffer[0] schieben
     _AppBefehlBuffer[0] = CommandChar;
+    if( getHelp(_AppBefehlBuffer) )
+    {
+        Serial.println( "Hilfe für setzen und lesen der Limits:\n" );
+        Serial.println( "!$R00000$!: Lesen des Kollisionslimits und der Einschaltswelle" );
+        Serial.println( "!$T00000$!: Lesen der aktuellen ADC Wertes (toggeln)" );
+
+        Serial.println( "!$WCXXXX$!: Schreiben des neuen Kollisionslimits (XXXX = Dezimalwert)" );
+        Serial.println( "!$WEXXXX$!: Schreiben des neuen Einschaltwertes (XXXX = Dezimalwert) \n \nEND\n" );
+    }
 
     if ((_AppBefehlBuffer[9] == '!') && (_AppBefehlBuffer[8] == '$') && (_AppBefehlBuffer[1] == '$') && (_AppBefehlBuffer[0] == '!'))
     {
@@ -40,7 +75,12 @@ uint8_t App::readCommandCharFromSerial(char CommandChar)
             Serial.write(" >>> Aktuelle Einschaltschwelle ist: ");
             Serial.println( settings->getSavedTurnOnValue() );
         }
-        else if( _AppBefehlBuffer[7] == 'T' )
+        else if(    _AppBefehlBuffer[7] == 'T' &&
+                    _AppBefehlBuffer[6] == '0' &&
+                    _AppBefehlBuffer[5] == '0' &&
+                    _AppBefehlBuffer[4] == '0' &&
+                    _AppBefehlBuffer[3] == '0' &&
+                    _AppBefehlBuffer[2] == '0' )
         {
             if( InOut->sendCurrentADCValues == 0 )
             {
@@ -55,22 +95,29 @@ uint8_t App::readCommandCharFromSerial(char CommandChar)
         }
         else if( _AppBefehlBuffer[7] == 'W' )
         {
-            calcVal = ( charToInt(_AppBefehlBuffer[5]) * 1000 +
+            if( isNumber( _AppBefehlBuffer ))
+            {
+                calcVal = ( charToInt(_AppBefehlBuffer[5]) * 1000 +
                             charToInt(_AppBefehlBuffer[4]) * 100 +
                             charToInt(_AppBefehlBuffer[3]) * 10 +
                             charToInt(_AppBefehlBuffer[2]) * 1 );
 
-            if(_AppBefehlBuffer[6] == 'C')
-            {
-                settings->saveUpperCollisionADCValue( calcVal );
-                Serial.write(" >>> Neues Strom ADC Limit ist: ");
-                Serial.println( calcVal );
+                if(_AppBefehlBuffer[6] == 'C')
+                {
+                    settings->saveUpperCollisionADCValue( calcVal );
+                    Serial.write(" >>> Neues Strom ADC Limit ist: ");
+                    Serial.println( calcVal );
+                }
+                if(_AppBefehlBuffer[6] == 'E')
+                {
+                    settings->saveTurnOnValue( calcVal );
+                    Serial.write(" >>> Neue Einschaltschwelle ist: ");
+                    Serial.println( calcVal );
+                }
             }
-            if(_AppBefehlBuffer[6] == 'E')
+            else
             {
-                settings->saveTurnOnValue( calcVal );
-                Serial.write(" >>> Neue Einschaltschwelle ist: ");
-                Serial.println( calcVal );
+                Serial.write(" >>> ERROR: Neuer Wert muss als Dezimalwert eingegeben werden und zwischen 0 und 4000 liegen!\n");
             }
         }
         else
