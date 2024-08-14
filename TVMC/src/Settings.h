@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include "WS2812B.h"
+#include <Wire.h>
 
 
 class Settings
@@ -38,11 +39,16 @@ public:
         void saveTurnOnValue( uint16_t val );
         uint16_t getSavedTurnOnValue( void );
 
+        // Test function  eeprom
+        void setDirectColor( pixel_t c );
+        void getDirectColor( pixel_t *c );
+
 private:
         static pixel_t _Color;
         static uint16_t _UpperCollisionADCValue;
         static uint16_t _TurnOnCurrentValue;
         static uint8_t _x;
+        static uint8_t _eepromInitialized;
 };
 
 #endif /* SETTINGS_H */

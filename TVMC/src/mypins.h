@@ -25,5 +25,6 @@ class mypins {
         static uint32_t iMit;
         static uint8_t direction;
         static uint8_t sendCurrentADCValues;
+        static uint8_t sendDebugMotorCurrent;
         static uint32_t ActualStepTVBoard;
 };

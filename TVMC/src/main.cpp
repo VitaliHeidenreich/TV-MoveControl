@@ -3,18 +3,16 @@
 #include "mypins.h"
 #include "WS2812B.h"
 #include "App.h"
-
 #include "BluetoothSerial.h"
-#include "WS2812B.h"
-#include "time.h"
-#include "Zeitmaster.h"
 
 #define LED_COUNT 112
 
+// I2C device found at address 0x52 --> EEPROM
+// I2C device found at address 0x68 --> ds3231
+
 WS2812 *Led;
 mypins InOut;
-Settings st;
-Zeitmaster *pZeit;
+Settings *set;
 
 hw_timer_t * timer = NULL;
 hw_timer_t * testTimer = NULL;
@@ -52,36 +50,38 @@ void IRAM_ATTR onTimer()
 void setup()
 {
     Serial.begin(115200);
-
+    // ets_delay_us(1000);
     // Timer Funktionen
+    
+    set = new Settings();
+
     event = 0;
     timer = timerBegin(1, 80, true);
     timerAttachInterrupt(timer, &onTimer, true);
     timerAlarmWrite(timer, 20000, true);
     timerAlarmEnable(timer);
 
+    
+
     InOut = mypins();
     Led = new WS2812((gpio_num_t)LED_PIN,LED_COUNT);
-    st = Settings();
-    //Led->clear();
+    
+    Led->clear();
     Led->setAllPixels({0,0,0});
     Led->show();
 
-    // Hinzufügen Ecxhtzeituhr
-    pZeit = new Zeitmaster();
-
     if (!SerialBT.begin("MyTV_Movit_V2"))
     {
-        // nop
+        Serial.println("ERROR: Bluetooth kann nicht gestartet werden!");
     }
 
     pinMode(INTERRUPT_PIN, INPUT);
     attachInterrupt(INTERRUPT_PIN, Ext_INT1_ISR, RISING);
     
     // Einlesen der NV Werte
-    st.getSavedColor( );
-    st.getSavedTurnOnValue( );
-    st.getSavedUpperCollisionADCValue( );
+    set->getSavedColor( );
+    set->getSavedTurnOnValue( );
+    set->getSavedUpperCollisionADCValue( );
     Serial.println("TVMC gestartet!");
 }
 
@@ -110,7 +110,7 @@ void loop()
             appinterpreter.readCommandCharFromSerial( (char)Serial.read() );
 
         // Startup Timer um zuerst gültige Werte fürs Verfahren zu bekommen
-        st.startUpTimer();
+        set->startUpTimer();
 
         tvState = InOut.getTVstate( InOut.sendCurrentADCValues );
 
@@ -119,9 +119,9 @@ void loop()
         {
             if( InOut.colorchanged )
             {
-                targetColor = st.getColor();
-                iLedCntr = 0;
-                st.saveActColor( );
+                targetColor = set->getColor();
+                iLedCntr = 0;  
+                set->saveActColor( );
                 InOut.colorchanged = 0;
             }
             InOut.collisionDetected = InOut.getFiltMotCurrent();
@@ -148,14 +148,14 @@ void loop()
      * solange keine Kollision erkannt wurde und die Startzeit abgewartet wurde:
      * Bewege den Fernseher falls nötig / gewünscht
      ************************************************************************************/
-    if( !InOut.collisionDetected && st.initTimeOver )
+    if( !InOut.collisionDetected && set->initTimeOver )
     {
         // Automatisches Verfahren des Fernsehers
-        if( st._AutoMove ) 
+        if( set->_AutoMove ) 
             dirOut = InOut.setMotorDir( tvState );  // Test for steps: change "tvState" to InOut.getTestPinState()
         // Manuelles Verfahren des Fernsehers - Initial nicht aktiv 
         else
-            dirOut = InOut.setMotorDir( (st._ManMoveDir == 2) ? 0 : 1 );
+            dirOut = InOut.setMotorDir( (set->_ManMoveDir == 2) ? 0 : 1 );
 
         /*************************************************************************************
          * Ist-Position des Fernstehers feststellen und Abgleich mit dem Soll

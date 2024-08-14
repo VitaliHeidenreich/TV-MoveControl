@@ -2,7 +2,7 @@
 #define CONFIG_H
 #pragma once
 #include <Arduino.h>
-#include "Settings.h"
+//#include "Settings.h"
 
 
 /***************************************************************************

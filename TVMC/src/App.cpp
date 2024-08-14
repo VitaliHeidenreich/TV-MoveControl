@@ -75,22 +75,39 @@ uint8_t App::readCommandCharFromSerial(char CommandChar)
             Serial.write(" >>> Aktuelle Einschaltschwelle ist: ");
             Serial.println( settings->getSavedTurnOnValue() );
         }
-        else if(    _AppBefehlBuffer[7] == 'T' &&
-                    _AppBefehlBuffer[6] == '0' &&
+        else if(    _AppBefehlBuffer[6] == '0' &&
                     _AppBefehlBuffer[5] == '0' &&
                     _AppBefehlBuffer[4] == '0' &&
                     _AppBefehlBuffer[3] == '0' &&
                     _AppBefehlBuffer[2] == '0' )
         {
-            if( InOut->sendCurrentADCValues == 0 )
+            if( _AppBefehlBuffer[7] == 'T' )
             {
-                InOut->sendCurrentADCValues = 1;
-                Serial.println( ">>>>>>> START" );
+                InOut->sendDebugMotorCurrent = 0;
+                if( InOut->sendCurrentADCValues == 0 )
+                {
+                    InOut->sendCurrentADCValues = 1;
+                    Serial.println( ">>>>>>> START: Lesen ADC Stromsensor" );
+                }
+                else
+                {
+                    InOut->sendCurrentADCValues = 0;
+                    Serial.println( ">>>>>>> END: Lesen ADC Stromsensor" );
+                }
             }
-            else
+            if( _AppBefehlBuffer[7] == 'M' )
             {
                 InOut->sendCurrentADCValues = 0;
-                Serial.println( ">>>>>>> END" );
+                if( InOut->sendDebugMotorCurrent == 0 )
+                {
+                    InOut->sendDebugMotorCurrent = 1;
+                    Serial.println( ">>>>>>> START: Lesen Motor ADC Werte" );
+                }
+                else
+                {
+                    InOut->sendDebugMotorCurrent = 0;
+                    Serial.println( ">>>>>>> END: Lesen Motor ADC Werte" );
+                }
             }
         }
         else if( _AppBefehlBuffer[7] == 'W' )

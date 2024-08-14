@@ -1,10 +1,11 @@
 #include <Arduino.h>
 #include "config.h"
 #include "mypins.h"
-#include "Settings.h"
+//#include "Settings.h"
 
 uint8_t mypins::collisionDetected = 0;
 uint8_t mypins::sendCurrentADCValues = 0;
+uint8_t mypins::sendDebugMotorCurrent = 0;
 uint8_t mypins::colorchanged = 1;
 uint32_t mypins::iMit = 2180;
 uint32_t mypins::ActualStepTVBoard = 0;
@@ -12,12 +13,12 @@ uint32_t mypins::ActualStepTVBoard = 0;
 uint8_t mypins::direction = 0;
 
 //_TurnOnCurrentValue
-Settings *settings;
+//Settings *settings;
 
 
 mypins::mypins()
 {
-    settings = new Settings();
+    //settings = new Settings();
     // Test pin
     pinMode(TESTBUTTON, INPUT_PULLUP);
 
@@ -44,7 +45,8 @@ mypins::mypins()
 uint8_t mypins::rangeCheck( uint8_t dirOut )
 {
     uint8_t iRet = 1;
-    if ( ((dirOut == 1) && (mypins::ActualStepTVBoard >= MAX_STEP_TV)) || ((dirOut == 0) && (mypins::ActualStepTVBoard == 0)) )
+    if (    ((dirOut == 1) && (ActualStepTVBoard >= MAX_STEP_TV)) || 
+            ((dirOut == 0) && (ActualStepTVBoard == 0)) )
         iRet = 0;
     return iRet;
 }
@@ -101,8 +103,6 @@ uint32_t mypins::getTVstate( uint8_t sendADCValue )
     static uint32_t z = 0;
     static uint32_t iRet = 0;
 
-    static uint8_t countDebug = 0;
-
     static uint32_t counter = 100;
 
     // Read analog value
@@ -124,36 +124,25 @@ uint32_t mypins::getTVstate( uint8_t sendADCValue )
     }
     z++;
 
-    if( iMit > settings->getSavedTurnOnValue() )
-    {
-        iRet = 1;
-    }
-    else
-    {
-        iRet = 0;
-    }
+    // if( iMit > settings->getSavedTurnOnValue() )
+    // {
+    //     iRet = 1;
+    // }
+    // else
+    // {
+    //     iRet = 0;
+    // }
 
     // Debug Nachricht
-    if( mypins::sendCurrentADCValues == 1 )
+    if( sendCurrentADCValues == 1 )
     {
         if( counter >= 100 )
         {
-            //Serial.println( iMit );   
+            Serial.print("ADCV: ");
+            Serial.println( iMit );   
             counter = 0;
         }
         counter++;
-    }
-
-    // Senden der gemessener und gemittelter ADC-Wert
-    if( sendADCValue )
-    {
-        countDebug ++;
-        if( countDebug >= 5 )
-        {
-            Serial.print("ADCV: ");
-            Serial.println( iMit );
-            countDebug = 0;
-        }
     }
 
     return iRet;
