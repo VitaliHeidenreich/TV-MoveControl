@@ -4,8 +4,10 @@
 #include "WS2812B.h"
 #include "App.h"
 #include "BluetoothSerial.h"
+#include "defines.h"
 
 #define LED_COUNT 112
+#define MAX_GET_VAL 8
 
 // I2C device found at address 0x52 --> EEPROM
 // I2C device found at address 0x68 --> ds3231
@@ -18,6 +20,10 @@ hw_timer_t * timer = NULL;
 hw_timer_t * testTimer = NULL;
 portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 uint8_t event;
+
+uint8_t start_string[] = "START";
+uint8_t next_string[] = "NEXT";
+uint8_t ende_string[] = "END";
 
 void IRAM_ATTR Ext_INT1_ISR()
 {
@@ -92,29 +98,42 @@ static pixel_t targetColor = {0,0,0};
 
 void loop()
 { 
-  /*************************************************************************************
-   * solange keine Kollision erkannt wurde:
-   * Den Zustand des Fernsehers feststellen und einstellen der Richtung
-   * Abfrage erfolgt alle 500ms
-   ************************************************************************************/
-  
-    // Eventgetriggerte Steuerung der Bewegung und der LEDs
+    /*************************************************************************************
+     * solange keine Kollision erkannt wurde:
+     * Den Zustand des Fernsehers feststellen und einstellen der Richtung
+     * Abfrage erfolgt alle 500ms
+     ************************************************************************************/
+    /************************************************************************************
+     * Eventgetriggerte Steuerung der Bewegung und der LEDs
+     ************************************************************************************/
     if( event )
     {
-        // Einlesen des Inputstreams from Bluetooth
+        /* Einlesen des Inputstreams from Bluetooth */
         if (SerialBT.available())
             appinterpreter.readCommandCharFromApp( (char)SerialBT.read() );
 
-        // Einlesen des Inputstreams from Serial
+        /* Einlesen des Inputstreams from Serial */
         if (Serial.available())
             appinterpreter.readCommandCharFromSerial( (char)Serial.read() );
+        
+        /* Senden der letzten Einstellungen */
+        if (set->actualValue[0] == 7)
+        {
+            SerialBT.write( start_string, 6);
+            for( int i = 1; i < MAX_GET_VAL; i++ )
+            {
+                SerialBT.write(set->actualValue[i]); SerialBT.write( next_string, 5);
+            }
+            SerialBT.write( ende_string, 4);
+            set->actualValue[0]=0;
+        }
 
-        // Startup Timer um zuerst gültige Werte fürs Verfahren zu bekommen
+        /* Startup Timer um zuerst gueltige Werte fuers Verfahren zu bekommen */
         set->startUpTimer();
 
-        tvState = InOut.getTVstate( InOut.sendCurrentADCValues );
+        tvState = InOut.getTVstate( );
 
-        // LED Steuerung R/G/B
+        /* LED Steuerung R/G/B */
         if( !InOut.collisionDetected )
         {
             if( InOut.colorchanged )
@@ -124,15 +143,16 @@ void loop()
                 set->saveActColor( );
                 InOut.colorchanged = 0;
             }
-            InOut.collisionDetected = InOut.getFiltMotCurrent();
+            InOut.collisionDetected = InOut.checkMotorIsBlocked();
         }
         else
         {
+            InOut.checkMotorIsBlocked(); // Damit 
             targetColor = {255,0,0};
             iLedCntr = 0;
         }
 
-        // change LED color
+        /* Change LED color */
         if( iLedCntr < LED_COUNT )
         {
             Led->setPixel( iLedCntr, targetColor );
@@ -140,7 +160,7 @@ void loop()
             iLedCntr ++;
         }
 
-        // Rücksetzen des Events
+        /* Ruecksetzen des Events */
         event = 0;
     }
     
@@ -148,12 +168,12 @@ void loop()
      * solange keine Kollision erkannt wurde und die Startzeit abgewartet wurde:
      * Bewege den Fernseher falls nötig / gewünscht
      ************************************************************************************/
-    if( !InOut.collisionDetected && set->initTimeOver )
+    if( !InOut.collisionDetected && set->startUpTimer() )
     {
-        // Automatisches Verfahren des Fernsehers
+        /* Automatisches Verfahren des Fernsehers */
         if( set->_AutoMove ) 
-            dirOut = InOut.setMotorDir( tvState );  // Test for steps: change "tvState" to InOut.getTestPinState()
-        // Manuelles Verfahren des Fernsehers - Initial nicht aktiv 
+            dirOut = InOut.setMotorDir( tvState );
+        /* Manuelles Verfahren des Fernsehers - Initial nicht aktiv */
         else
             dirOut = InOut.setMotorDir( (set->_ManMoveDir == 2) ? 0 : 1 );
 

@@ -7,7 +7,7 @@ uint16_t Settings::_UpperCollisionADCValue = 1422;
 uint16_t Settings::_TurnOnCurrentValue = 1405;
 uint8_t Settings::_AutoMove     = 1;
 uint8_t Settings::_ManMoveDir   = 0;
-uint8_t Settings::initTimeOver  = 0;
+uint8_t Settings::actualValue[8] = {0,0,0,0,0,0,0,0};
 // Nur als Hilfsgröße
 uint8_t Settings::_eepromInitialized = 0;
 
@@ -75,13 +75,16 @@ uint8_t Settings::blinkCollision(uint8_t on)
  * Beim Aufstart soll eine vorgegebene Zeit abgewartet werden,
  * damit der Stromsensor plausible Werte bekommt
  *********************************************************************/
-void Settings::startUpTimer()
+uint8_t Settings::startUpTimer()
 {
     static uint16_t tikz = 0;
     if( tikz >= 100 )
-        initTimeOver = 1;
+        return 1;
     else
+    {
         tikz ++;
+        return 0;
+    }
 }
 
 /**********************************************************************

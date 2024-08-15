@@ -233,6 +233,9 @@ uint8_t App::readCommandCharFromApp(char CommandChar)
         case 'W':
                 // nop
             break;
+        case 'G':
+                settings->actualValue[0] = 7;
+            break;
         default:
             iRet = 0;
             break;

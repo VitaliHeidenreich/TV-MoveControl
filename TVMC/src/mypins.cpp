@@ -1,7 +1,8 @@
 #include <Arduino.h>
 #include "config.h"
 #include "mypins.h"
-//#include "Settings.h"
+#include "Settings.h"
+#include "defines.h"
 
 uint8_t mypins::collisionDetected = 0;
 uint8_t mypins::sendCurrentADCValues = 0;
@@ -13,12 +14,12 @@ uint32_t mypins::ActualStepTVBoard = 0;
 uint8_t mypins::direction = 0;
 
 //_TurnOnCurrentValue
-//Settings *settings;
+Settings *settings;
 
 
 mypins::mypins()
 {
-    //settings = new Settings();
+    settings = new Settings();
     // Test pin
     pinMode(TESTBUTTON, INPUT_PULLUP);
 
@@ -57,12 +58,9 @@ uint8_t mypins::rangeCheck( uint8_t dirOut )
  * @param dir 
  * @return uint8_t 
  */
-uint8_t mypins::setMotorDir( uint8_t dir )
+uint8_t mypins::setMotorDir( uint8_t state )
 {
-    if ( getTestPinState() )
-        (dir == 1) ? dir = 0 : dir = 1;
-
-    if( dir )
+    if( state == ON )
     {
         // Fernseher ausfahren
         digitalWrite(DRK, 0); 
@@ -75,11 +73,6 @@ uint8_t mypins::setMotorDir( uint8_t dir )
         direction = 0;
     }
     return direction;
-}
-
-uint8_t mypins::getTestPinState( void )
-{
-    return (digitalRead(TESTBUTTON));
 }
 
 // Zum Einstellen der Motorgeschwindigkeit (beide Motoren, falls vorhanden)
@@ -97,13 +90,9 @@ void mypins::setMotorSpeed( uint16_t speed )
     }
 }
 
-uint32_t mypins::getTVstate( uint8_t sendADCValue )
+uint32_t mypins::getTVstate( )
 {
     static uint32_t myVal[TV_MEASNUMB] = {2180};
-    static uint32_t z = 0;
-    static uint32_t iRet = 0;
-
-    static uint32_t counter = 100;
 
     // Read analog value
     // Befüllung des Ringbuffers (kopieren von vorne nach hinten, beginnend am Ende)
@@ -116,77 +105,36 @@ uint32_t mypins::getTVstate( uint8_t sendADCValue )
     // Bilden des Mittelwertes
     for(uint32_t i = 0; i < TV_MEASNUMB; i++)
         iMit = iMit +  myVal[i];
+    
     iMit = iMit / TV_MEASNUMB;
-
-    if(z >= TV_MEASNUMB)
-    {
-        z=1;
-    }
-    z++;
-
-    // if( iMit > settings->getSavedTurnOnValue() )
-    // {
-    //     iRet = 1;
-    // }
-    // else
-    // {
-    //     iRet = 0;
-    // }
-
-    // Debug Nachricht
-    if( sendCurrentADCValues == 1 )
-    {
-        if( counter >= 100 )
-        {
-            Serial.print("ADCV: ");
-            Serial.println( iMit );   
-            counter = 0;
-        }
-        counter++;
-    }
-
-    return iRet;
+    
+    if( iMit > settings->getSavedTurnOnValue() )
+        return ON;
+    else
+        return OFF;
 }
 
-uint8_t mypins::getFiltMotCurrent()
+uint8_t mypins::checkMotorIsBlocked()
 {
     static uint16_t currentValues[CURRENTNUMVAL] = {0};
     uint32_t medianCValue = 0;
 
-    #if DEBUG == 7
-        static uint8_t test = 0;
-    #endif
-
     //Befüllung des Ringbuffers (kopieren von vorne nach hinten, beginnend am Ende)
     for (uint8_t i = (CURRENTNUMVAL - 1); i > 0; i--)
-    {
         currentValues[i] = currentValues[i - 1];
-    }
 
     // Neues Zeichen in den Buffer[0] schieben
     currentValues[0] = analogRead(CURRENTMEASPIN);
 
     // Bilden des Mittelwertes
     for (uint8_t i = 0; i < CURRENTNUMVAL; i++)
-    {
         medianCValue += currentValues[i];
-    }
 
-    medianCValue /= CURRENTNUMVAL;
-
-    #if DEBUG == 7
-        if( test == 9)
-        {
-            Serial.println(medianCValue);
-        } 
-        test ++;
-        if( test >= 10 )
-            test = 0;
-    #endif
+    medianCValue = medianCValue / CURRENTNUMVAL;
     
     // testing the measured median val
     if( OVERCURDETVAL <= medianCValue )
-        return 1;
+        return COLLISION;
     else
-        return 0;
+        return NO_COLLISION;
 }

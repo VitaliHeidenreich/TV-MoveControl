@@ -25,8 +25,7 @@ public:
         static uint8_t _ManMoveDir;
 
         // Freigabe der Steuerung nach einer Definierten Zeit beim Aufstart
-        static uint8_t initTimeOver;
-        void startUpTimer( void );
+        uint8_t startUpTimer( void );
 
         // Speichern der Angaben auf den EEPROM
         void saveActColor( void );
@@ -42,6 +41,8 @@ public:
         // Test function  eeprom
         void setDirectColor( pixel_t c );
         void getDirectColor( pixel_t *c );
+
+        static uint8_t actualValue[8];
 
 private:
         static pixel_t _Color;
