@@ -7,7 +7,10 @@
 #include "defines.h"
 
 #define LED_COUNT 112
-#define MAX_GET_VAL 8
+#define MAX_GET_VAL 10
+
+#define COUNT_UP 0
+#define JUST_READ 1
 
 // I2C device found at address 0x52 --> EEPROM
 // I2C device found at address 0x68 --> ds3231
@@ -67,8 +70,6 @@ void setup()
     timerAlarmWrite(timer, 20000, true);
     timerAlarmEnable(timer);
 
-    
-
     InOut = mypins();
     Led = new WS2812((gpio_num_t)LED_PIN,LED_COUNT);
     
@@ -89,12 +90,19 @@ void setup()
     set->getSavedTurnOnValue( );
     set->getSavedUpperCollisionADCValue( );
     Serial.println("TVMC gestartet!");
+
+    if( set->checkForPowerLossRtc() )
+    {
+        Serial.println("RTC power loss was detected! RTC will set initialy to 12:00:00");
+        set->setTime(12,00,00);
+    }
 }
 
 static uint8_t dirOut = 0;
 static uint8_t tvState = 0;
 static uint8_t iLedCntr = 0;
 static pixel_t targetColor = {0,0,0};
+static uint8_t lastColorState = 255;
 
 void loop()
 { 
@@ -109,11 +117,11 @@ void loop()
     if( event )
     {
         /* Einlesen des Inputstreams from Bluetooth */
-        if (SerialBT.available())
+        while (SerialBT.available())
             appinterpreter.readCommandCharFromApp( (char)SerialBT.read() );
 
         /* Einlesen des Inputstreams from Serial */
-        if (Serial.available())
+        while (Serial.available())
             appinterpreter.readCommandCharFromSerial( (char)Serial.read() );
         
         /* Senden der letzten Einstellungen */
@@ -125,31 +133,33 @@ void loop()
                 SerialBT.write(set->actualValue[i]); SerialBT.write( next_string, 5);
             }
             SerialBT.write( ende_string, 4);
-            set->actualValue[0]=0;
+            set->actualValue[0] = 0;
         }
-
-        /* Startup Timer um zuerst gueltige Werte fuers Verfahren zu bekommen */
-        set->startUpTimer();
 
         tvState = InOut.getTVstate( );
 
         /* LED Steuerung R/G/B */
-        if( !InOut.collisionDetected )
+        if( InOut.checkMotorIsBlocked() && lastColorState != 0)
         {
-            if( InOut.colorchanged )
-            {
-                targetColor = set->getColor();
-                iLedCntr = 0;  
-                set->saveActColor( );
-                InOut.colorchanged = 0;
-            }
-            InOut.collisionDetected = InOut.checkMotorIsBlocked();
+            targetColor = {150,0,0};
+            iLedCntr = 0;
+            lastColorState = 0; // set that state as last state
+        }
+        /* Startup Timer um zuerst gueltige Werte fuers Verfahren zu bekommen */
+        else if( !set->checkStartUpDone( COUNT_UP ) && lastColorState != 1)
+        {
+            targetColor = {20,20,20};
+            iLedCntr = 0;
+            lastColorState = 1; // set that state as last state
         }
         else
         {
-            InOut.checkMotorIsBlocked(); // Damit 
-            targetColor = {255,0,0};
-            iLedCntr = 0;
+            if( InOut.getColorChangeTrigger() )
+            {
+                targetColor = set->getColor( );
+                iLedCntr = 0;  
+            }
+            lastColorState = 2; // set that state as last state
         }
 
         /* Change LED color */
@@ -163,12 +173,12 @@ void loop()
         /* Ruecksetzen des Events */
         event = 0;
     }
-    
+     
     /*************************************************************************************
      * solange keine Kollision erkannt wurde und die Startzeit abgewartet wurde:
      * Bewege den Fernseher falls nötig / gewünscht
      ************************************************************************************/
-    if( !InOut.collisionDetected && set->startUpTimer() )
+    if( !InOut.checkMotorIsBlocked() && set->checkStartUpDone( JUST_READ ) )
     {
         /* Automatisches Verfahren des Fernsehers */
         if( set->_AutoMove ) 

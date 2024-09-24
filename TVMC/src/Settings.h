@@ -8,48 +8,83 @@
 
 class Settings
 {
-        
-public:
-        //Konstruktor
-        Settings();
+        public:
+                //Konstruktor
+                Settings();
 
-        /****************************************
-         * LED Farbe
-         ***************************************/
-        void setColor(pixel_t color);
-        void setColor(byte red, byte green, byte blue);
-        pixel_t getColor();
-        uint8_t blinkCollision(uint8_t on);
+                /****************************************
+                 * LED Farbe
+                 ***************************************/
+                void setColor(pixel_t color);
+                void setColor(byte red, byte green, byte blue);
+                pixel_t getColor( void );
+                uint8_t blinkCollision(uint8_t on);
 
-        static uint8_t _AutoMove;
-        static uint8_t _ManMoveDir;
+                static uint8_t _AutoMove;
+                static uint8_t _ManMoveDir;
 
-        // Freigabe der Steuerung nach einer Definierten Zeit beim Aufstart
-        uint8_t startUpTimer( void );
+                // Freigabe der Steuerung nach einer Definierten Zeit beim Aufstart
+                uint8_t checkStartUpDone( uint8_t justRead );
 
-        // Speichern der Angaben auf den EEPROM
-        void saveActColor( void );
-        void getSavedColor( void );
+                // Speichern der Angaben auf den EEPROM
+                void saveActColor( void );
+                void getSavedColor( void );
 
-        // Settings for collision limit
-        void saveUpperCollisionADCValue( uint16_t val );
-        uint16_t getSavedUpperCollisionADCValue( void );
+                // Settings for collision limit
+                void saveUpperCollisionADCValue( uint16_t val );
+                uint16_t getSavedUpperCollisionADCValue( void );
+                uint16_t getSavedUpperCollisionADCValue_D( void );
 
-        void saveTurnOnValue( uint16_t val );
-        uint16_t getSavedTurnOnValue( void );
+                void saveTurnOnValue( uint16_t val );
+                uint16_t getSavedTurnOnValue( void );
+                uint16_t getSavedTurnOnValue_D( void );
 
-        // Test function  eeprom
-        void setDirectColor( pixel_t c );
-        void getDirectColor( pixel_t *c );
+                void saveTurnOffValue( uint16_t val );
+                uint16_t getSavedTurnOffValue( void );
+                uint16_t getSavedTurnOffValue_D( void );
 
-        static uint8_t actualValue[8];
+                // Test function  eeprom
+                void setDirectColor( pixel_t c );
+                void getDirectColor( pixel_t *c );
 
-private:
-        static pixel_t _Color;
-        static uint16_t _UpperCollisionADCValue;
-        static uint16_t _TurnOnCurrentValue;
-        static uint8_t _x;
-        static uint8_t _eepromInitialized;
+                /******************************************************************
+                 * vector  0: - Trigger if != 0
+                 * vector  1: - color red
+                 * vector  2: - color green
+                 * vector  3: - color blue
+                 * vector  4: - max collision current value msb
+                 * vector  5: - max collision current value lsb
+                 * vector  6: - ADC turn  on value msb
+                 * vector  7: - ADC turn  on value lsb
+                 * vector  8: - ADC turn off value msb
+                 * vector  9: - ADC turn off value lsb
+                 * vector 10: - actual ADC current value msb
+                 * vector 11: - actual ADC current value lsb
+                *******************************************************************/
+                static uint8_t actualValue[10];
+
+                uint8_t setTime( uint8_t hours, uint8_t minutes, uint8_t seconds );
+                void getTime( uint8_t *hours, uint8_t *minutes, uint8_t *seconds );
+                void getTime( uint8_t *hours, uint8_t *minutes );
+
+                uint8_t setDate( uint8_t year, uint8_t month, uint8_t date );
+                void getDate( uint8_t *year, uint8_t *month, uint8_t *date );
+
+                uint8_t checkForPowerLossRtc();
+
+                void setColorAndLightBehavior( uint8_t setting );
+                uint8_t getColorAndLightBehavior(byte red, byte green, byte blue);
+
+                static uint8_t colorchanged;
+
+        private:
+                static pixel_t _Color;
+                static uint16_t _UpperCollisionADCValue;
+                static uint16_t _TurnOnCurrentValue;
+                static uint16_t _TurnOffCurrentValue;
+                static uint8_t _x;
+                static uint8_t _eepromInitialized;
+                static uint8_t colorAndLightBehavior;
 };
 
 #endif /* SETTINGS_H */

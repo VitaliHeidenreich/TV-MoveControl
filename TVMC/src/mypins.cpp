@@ -6,9 +6,8 @@
 
 uint8_t mypins::collisionDetected = 0;
 uint8_t mypins::sendCurrentADCValues = 0;
+uint8_t mypins::sendMotorCurrentValues = 0;
 uint8_t mypins::sendDebugMotorCurrent = 0;
-uint8_t mypins::colorchanged = 1;
-uint32_t mypins::iMit = 2180;
 uint32_t mypins::ActualStepTVBoard = 0;
 
 uint8_t mypins::direction = 0;
@@ -42,6 +41,36 @@ mypins::mypins()
     pinMode(TVPIN, ANALOG);
 }
 
+/*****************************************************************************************
+ * @brief To get the info that the color was changed. After read the trigger will be reseted
+ * 
+ * @param local static variable
+ * @return the trigger state, after read it will be resetet to 0
+ ****************************************************************************************/
+uint8_t mypins::getColorChangeTrigger()
+{
+    if( settings->colorchanged == 1)
+    {
+        settings->colorchanged = 0;
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+/*****************************************************************************************
+ * @brief Reset the collision detected variable to 0 (static variable)
+ * 
+ * @param local static variable 
+ * @return no
+ ****************************************************************************************/
+void mypins::resetCollisionDetected()
+{
+    collisionDetected = NO_COLLISION;
+}
+
 // Nur zum Testen
 uint8_t mypins::rangeCheck( uint8_t dirOut )
 {
@@ -52,12 +81,12 @@ uint8_t mypins::rangeCheck( uint8_t dirOut )
     return iRet;
 }
 
-/**
+/*****************************************************************************************
  * @brief dir == 1 --> OUT
  * 
  * @param dir 
  * @return uint8_t 
- */
+ ****************************************************************************************/
 uint8_t mypins::setMotorDir( uint8_t state )
 {
     if( state == ON )
@@ -90,9 +119,65 @@ void mypins::setMotorSpeed( uint16_t speed )
     }
 }
 
+void sendDebugValueCurrentTVBoard( uint32_t mittelWert )
+{
+    static uint32_t debugVar = 0; // für Anfrage der Mittelwerte aus der UART
+    static uint32_t debugVarCount = 1;
+
+    if( mypins::sendCurrentADCValues == 1 )
+    {
+        if( debugVar >= 100 )
+        {
+            Serial.print( mittelWert ); Serial.print( "TVC Nr.: " ); Serial.println( debugVarCount );
+            debugVarCount ++;
+            debugVar = 0;
+        }
+        else
+        {
+            debugVar ++;
+        }
+    }
+    else
+    {
+        debugVarCount = 1;
+    }
+}
+
+void sendDebugValueCurrentMotor( uint32_t medianCValue )
+{
+    static uint32_t debugVar = 0; // für Anfrage der Mittelwerte aus der UART
+    static uint32_t debugVarCount = 1;
+
+    if( mypins::sendMotorCurrentValues == 1 )
+    {
+        if( debugVar >= 100 )
+        {
+            Serial.print( medianCValue ); Serial.print( "MC  Nr.: " ); Serial.println( debugVarCount );
+            debugVarCount ++;
+            debugVar = 0;
+        }
+        else
+        {
+            debugVar ++;
+        }
+    }
+    else
+    {
+        debugVarCount = 1;
+    }
+}
+
+/****************************************************************************************
+ * @brief Read the tv state out of the current measurement (filtered)
+ * 
+ * @param local static variable 
+ * @return tv on (1) and tv off (0) 
+ ****************************************************************************************/
 uint32_t mypins::getTVstate( )
 {
-    static uint32_t myVal[TV_MEASNUMB] = {2180};
+    static uint32_t myVal[TV_MEASNUMB] = { settings->getSavedTurnOffValue_D() };
+    static uint8_t iRet = 0; 
+    static uint32_t iMit = 0;
 
     // Read analog value
     // Befüllung des Ringbuffers (kopieren von vorne nach hinten, beginnend am Ende)
@@ -107,13 +192,27 @@ uint32_t mypins::getTVstate( )
         iMit = iMit +  myVal[i];
     
     iMit = iMit / TV_MEASNUMB;
+
+    sendDebugValueCurrentTVBoard( iMit );
     
-    if( iMit > settings->getSavedTurnOnValue() )
-        return ON;
+    if( iMit > settings->getSavedTurnOnValue_D() )
+        iRet = ON;
+    else if( iMit < settings->getSavedTurnOffValue_D() )
+        iRet = OFF;
     else
-        return OFF;
+        return iRet;
+
+    return iRet;
 }
 
+/****************************************************************************************
+ * @brief If the current is exeeting the current limit as a median value the 
+ *          motor is blocked. so the static paramter collisionDetected will be set
+ *          and motor shall be stoped.
+ * 
+ * @param local static variable 
+ * @return motor blocked (1) and no issue (0) 
+ ****************************************************************************************/
 uint8_t mypins::checkMotorIsBlocked()
 {
     static uint16_t currentValues[CURRENTNUMVAL] = {0};
@@ -123,18 +222,21 @@ uint8_t mypins::checkMotorIsBlocked()
     for (uint8_t i = (CURRENTNUMVAL - 1); i > 0; i--)
         currentValues[i] = currentValues[i - 1];
 
-    // Neues Zeichen in den Buffer[0] schieben
+    /* write new value to the Buffer[0]*/
     currentValues[0] = analogRead(CURRENTMEASPIN);
 
-    // Bilden des Mittelwertes
+    /* calculation median value */
     for (uint8_t i = 0; i < CURRENTNUMVAL; i++)
         medianCValue += currentValues[i];
 
     medianCValue = medianCValue / CURRENTNUMVAL;
-    
-    // testing the measured median val
-    if( OVERCURDETVAL <= medianCValue )
-        return COLLISION;
-    else
-        return NO_COLLISION;
+
+    sendDebugValueCurrentMotor( medianCValue );
+
+    /* testing the measured median val */
+    /* clearing the collision detected only by other function */
+    if( settings->getSavedUpperCollisionADCValue_D() <= medianCValue )
+        collisionDetected = COLLISION;
+
+    return collisionDetected;
 }
