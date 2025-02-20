@@ -6,7 +6,6 @@
 #include "BluetoothSerial.h"
 #include "defines.h"
 
-#define LED_COUNT 112
 #define MAX_GET_VAL 10
 
 #define COUNT_UP 0
@@ -28,20 +27,6 @@ uint8_t start_string[] = "START";
 uint8_t next_string[] = "NEXT";
 uint8_t ende_string[] = "END";
 
-void IRAM_ATTR Ext_INT1_ISR()
-{
-    if(mypins::direction == 1)
-    {
-        if( mypins::ActualStepTVBoard < MAX_STEP_TV )
-            mypins::ActualStepTVBoard ++;
-    }
-    else
-    {
-        if( mypins::ActualStepTVBoard > 0 )
-            mypins::ActualStepTVBoard --;
-    }
-}
-
 /******************************************************************************************
  * Anlegen der Peripherie Instanzen
  *****************************************************************************************/
@@ -55,6 +40,18 @@ void IRAM_ATTR onTimer()
   portEXIT_CRITICAL_ISR(&timerMux);
 }
 
+uint8_t toggleIntager( uint8_t input )
+{
+    if( input )
+        return 0;
+    else
+        return 1;
+}
+
+static uint8_t dirOut = 0;
+static uint8_t tvState = 0;
+static uint8_t iLedCntr = 0;
+static pixel_t targetColor = {0,0,0};
 
 void setup()
 {
@@ -65,44 +62,43 @@ void setup()
     set = new Settings();
 
     event = 0;
-    timer = timerBegin(1, 80, true);
-    timerAttachInterrupt(timer, &onTimer, true);
-    timerAlarmWrite(timer, 20000, true);
+    timer = timerBegin(1, PRESCALER, true); // 80000MHz / 80
+    timerAttachInterrupt(timer, &onTimer, true); // Attached interrupt function
+    timerAlarmWrite(timer, INTERRUPTTIME * 1000, true); // in ms as interrupt
     timerAlarmEnable(timer);
 
+    //set->setColor({0,0,70});
+
     InOut = mypins();
-    Led = new WS2812((gpio_num_t)LED_PIN,LED_COUNT);
-    
-    Led->clear();
-    Led->setAllPixels({0,0,0});
-    Led->show();
+    Led = new WS2812((gpio_num_t)LED_PIN,LED_CNT_SUM);
+    // Led->setAllPixels(100, 0, 0);
+    // ets_delay_us(99999999);
+    Led->turnOffAllPixels( );
 
     if (!SerialBT.begin("MyTV_Movit_V2"))
     {
         Serial.println("ERROR: Bluetooth kann nicht gestartet werden!");
     }
-
-    pinMode(INTERRUPT_PIN, INPUT);
-    attachInterrupt(INTERRUPT_PIN, Ext_INT1_ISR, RISING);
     
     // Einlesen der NV Werte
     set->getSavedColor( );
     set->getSavedTurnOnValue( );
-    set->getSavedUpperCollisionADCValue( );
-    Serial.println("TVMC gestartet!");
+    set->getSavedTurnOffValue( );
+    set->readEEPromSavedMotorCollisionValue( );
+    Serial.println("TVMC gestartet! To get help tipe \"help\" in to the console. For the the status \"status\".");
 
     if( set->checkForPowerLossRtc() )
     {
         Serial.println("RTC power loss was detected! RTC will set initialy to 12:00:00");
-        set->setTime(12,00,00);
+        set->setTime(12,27,58);
+        set->setDate(1,1,25);
     }
+    
+    InOut.setMotorSpeed( 0 );
+    InOut.setColorChangeTrigger();
 }
 
-static uint8_t dirOut = 0;
-static uint8_t tvState = 0;
-static uint8_t iLedCntr = 0;
-static pixel_t targetColor = {0,0,0};
-static uint8_t lastColorState = 255;
+uint8_t motorSpeed = 100;
 
 void loop()
 { 
@@ -110,12 +106,17 @@ void loop()
      * solange keine Kollision erkannt wurde:
      * Den Zustand des Fernsehers feststellen und einstellen der Richtung
      * Abfrage erfolgt alle 500ms
-     ************************************************************************************/
-    /************************************************************************************
+     * 
      * Eventgetriggerte Steuerung der Bewegung und der LEDs
      ************************************************************************************/
     if( event )
     {
+        // What for valid current values
+        set->incrementStartUpCounter( );
+
+        // Motor block state check
+        InOut.checkMotorForCollision();
+
         /* Einlesen des Inputstreams from Bluetooth */
         while (SerialBT.available())
             appinterpreter.readCommandCharFromApp( (char)SerialBT.read() );
@@ -138,37 +139,49 @@ void loop()
 
         tvState = InOut.getTVstate( );
 
-        /* LED Steuerung R/G/B */
-        if( InOut.checkMotorIsBlocked() && lastColorState != 0)
-        {
-            targetColor = {150,0,0};
-            iLedCntr = 0;
-            lastColorState = 0; // set that state as last state
-        }
         /* Startup Timer um zuerst gueltige Werte fuers Verfahren zu bekommen */
-        else if( !set->checkStartUpDone( COUNT_UP ) && lastColorState != 1)
+        if( InOut.getColorChangeTrigger() )
         {
-            targetColor = {20,20,20};
-            iLedCntr = 0;
-            lastColorState = 1; // set that state as last state
-        }
-        else
-        {
-            if( InOut.getColorChangeTrigger() )
-            {
-                targetColor = set->getColor( );
-                iLedCntr = 0;  
-            }
-            lastColorState = 2; // set that state as last state
+            targetColor = set->getColor();
+            iLedCntr = 0; 
         }
 
         /* Change LED color */
-        if( iLedCntr < LED_COUNT )
+        if ( set->checkStartUpIsDone( ) )
         {
-            Led->setPixel( iLedCntr, targetColor );
-            Led->show();
-            iLedCntr ++;
+            if ( InOut.motorCollisionDetected( ) )
+            {
+                Led->alternateColor(80, 0, 0);
+            }    
+            else 
+            {
+                    if ( !ENDSTOP_OUT  &&  dirOut==1 && motorSpeed > 0 )
+                    {
+                        Led->showMovingLights(0, targetColor); iLedCntr = 0; 
+                    }
+                    else if( !ENDSTOP_IN && dirOut==0 && motorSpeed > 0 )
+                    {
+                        Led->showMovingLights(1, targetColor); iLedCntr = 0; 
+                    }
+                    else
+                    {
+                        if( iLedCntr < LED_CNT_SUM )
+                        {
+                            Led->setPixel( iLedCntr, targetColor );
+                            Led->show();
+                            iLedCntr ++;
+                        }
+                    }
+            }
         }
+        else
+        {
+            /* startup lights */
+            Led->alternateColor( );
+        }
+
+        // Read buttons
+        InOut.checkBtnFunctions();
 
         /* Ruecksetzen des Events */
         event = 0;
@@ -178,22 +191,39 @@ void loop()
      * solange keine Kollision erkannt wurde und die Startzeit abgewartet wurde:
      * Bewege den Fernseher falls nötig / gewünscht
      ************************************************************************************/
-    if( !InOut.checkMotorIsBlocked() && set->checkStartUpDone( JUST_READ ) )
+    if( !InOut.motorCollisionDetected() && set->checkStartUpIsDone( ) )
     {
         /* Automatisches Verfahren des Fernsehers */
         if( set->_AutoMove ) 
+        {
             dirOut = InOut.setMotorDir( tvState );
+            motorSpeed = 100;
+        }
         /* Manuelles Verfahren des Fernsehers - Initial nicht aktiv */
         else
-            dirOut = InOut.setMotorDir( (set->_ManMoveDir == 2) ? 0 : 1 );
-
+        {
+            // Soll der Fernseher ausgefahren werden?
+            if ( set->_ManMoveDir == 2 )
+            {
+                dirOut = InOut.setMotorDir( 0 );
+                motorSpeed = 100;
+            }
+            else if( set->_ManMoveDir == 1 )
+            {
+                dirOut = InOut.setMotorDir( 1 );
+                motorSpeed = 100;
+            }
+            else
+                motorSpeed = 0;
+        }
+        
         /*************************************************************************************
          * Ist-Position des Fernstehers feststellen und Abgleich mit dem Soll
-         * * Out-Stopp ist    ET2       Ausführung als Schließer
-         * * In-Stopp ist     ET1       Ausführung als Schließer
+         * * Out-Stopp ist    ET1      Ausführung als Schließer
+         * * In-Stopp ist     ET2      Ausführung als Schließer
          ************************************************************************************/
-        if((( OUT_SENSSTATE ) && ( dirOut==1 )) || (( IN_SENSSTATE ) && ( dirOut==0 )))
-            InOut.setMotorSpeed( 1 );
+        if(( ( !ENDSTOP_OUT  &&  dirOut==1) ) || ( !ENDSTOP_IN && dirOut==0 ))
+            InOut.setMotorSpeed( motorSpeed );
         else
             InOut.setMotorSpeed( 0 );
     }

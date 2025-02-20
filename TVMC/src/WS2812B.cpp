@@ -8,6 +8,7 @@
 
 #include "sdkconfig.h"
 #include "WS2812B.h"
+#include "defines.h"
 
 //static char tag[] = "WS2812";
 
@@ -238,6 +239,17 @@ void WS2812::setAllPixels(uint8_t red, uint8_t green, uint8_t blue)
     }
 }
 
+void WS2812::turnOffAllPixels( )
+{
+    for (auto i=0; i<this->pixelCount; i++)
+    {
+        this->pixels[i].red   = 0;
+        this->pixels[i].green = 0;
+        this->pixels[i].blue  = 0;
+    }
+    WS2812::show();
+}
+
 void WS2812::setAllPixels(pixel_t color)
 {
     for (auto i=0; i<this->pixelCount; i++)
@@ -246,6 +258,70 @@ void WS2812::setAllPixels(pixel_t color)
         this->pixels[i].green = color.green;
         this->pixels[i].blue  = color.blue;
     }
+    WS2812::show();
+}
+
+void WS2812::alternateColor( )
+{
+    static uint8_t illumination = 0;
+    static uint8_t up = 1;
+    static uint8_t col = 0;
+
+    if( up )
+    {
+        illumination += 5;
+        if ( illumination > 95 )
+        {
+            up = 0;
+        }
+    }
+    else
+    {
+        illumination -=5;
+        if ( illumination < 5 )
+        {
+            up = 1;
+            col ++;
+            if( col > 2 )
+            {
+                col = 0;
+            }
+        }
+    }
+    if( col == 0 )
+        setAllPixels(50*illumination/100, 0*illumination/100, 0*illumination/100);
+    else if( col == 1 )
+        setAllPixels(0*illumination/100, 50*illumination/100, 0*illumination/100);
+    else
+        setAllPixels(0*illumination/100, 0*illumination/100, 50*illumination/100);
+
+    show();
+}
+
+void WS2812::alternateColor( uint8_t red, uint8_t green, uint8_t blue )
+{
+    static uint8_t illumination = 0;
+    static uint8_t up = 1;
+
+    if( up )
+    {
+        illumination += 2;
+        if ( illumination >= 100 )
+        {
+            up = 0;
+        }
+    }
+    else
+    {
+        illumination -=2;
+        if ( illumination <= 5 )
+        {
+            up = 1;
+        }
+    }
+    
+    setAllPixels(red*illumination/100, green*illumination/100, blue*illumination/100);
+    show();
 }
 
 /**
@@ -281,4 +357,60 @@ WS2812::~WS2812()
 {
     delete this->items;
     delete this->pixels;
+}
+
+void WS2812::showMovingLights(uint8_t direction, pixel_t targetColor)
+{
+    //LED_CNT_SUM
+    static uint8_t place = 0;
+    static uint8_t numDelay = 0;
+    pixel_t myFinColor = targetColor;
+    uint8_t flipIt = false;
+
+    if(targetColor.red < 10 && targetColor.green < 10 && targetColor.blue < 10)
+    {
+        myFinColor = {80,80,80};
+        flipIt = true;
+    }
+
+    if( numDelay == 0 )
+    {
+        if( direction == 1)
+        {
+            place ++;
+            if( place >= LED_CNT_UPPER_ROW )
+                place = 0;
+        }
+        else
+        {
+            if( place == 0 )
+                place = LED_CNT_UPPER_ROW;
+            place --;
+        }
+
+        for(uint8_t i = 0; i < LED_CNT_UPPER_ROW; i++)
+        {
+            if( ((i != place) && !flipIt) || ((i == place) && flipIt) )
+                setPixel(i, myFinColor);
+            else
+                setPixel(i, {0,0,0});
+        }
+
+        uint8_t startRowBelow = (LED_CNT_UPPER_ROW + (LED_CNT_SUM - (LED_CNT_UPPER_ROW * 2)) / 2);
+        uint8_t endRowBelow = (LED_CNT_UPPER_ROW * 2 + (LED_CNT_SUM - (LED_CNT_UPPER_ROW * 2)) / 2) - 1;
+
+        for(uint8_t i = startRowBelow; i <= endRowBelow; i++)
+        {
+            if( ((i != (endRowBelow - place)) && !flipIt) || ((i == (endRowBelow - place)) && flipIt) )
+                setPixel(i, myFinColor);
+            else
+                setPixel(i, {0,0,0});
+        }
+
+        WS2812::show();
+    }
+
+    numDelay ++;
+    if( numDelay == 5 )
+        numDelay = 0;
 }

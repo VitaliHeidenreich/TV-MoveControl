@@ -53,9 +53,13 @@ class WS2812 {
         void setPixel(uint16_t index, uint8_t red, uint8_t green, uint8_t blue);
         void setPixel(uint16_t index, pixel_t color);
         void setAllPixels(uint8_t red, uint8_t green, uint8_t blue);
+        void alternateColor(uint8_t red, uint8_t green, uint8_t blue);
+        void alternateColor( void );
         void setAllPixels(pixel_t color);
+        void turnOffAllPixels( );
         void clear();
         uint16_t getPixelCount();
+        void showMovingLights(uint8_t direction, pixel_t targetColor);
         virtual ~WS2812();
     private:
         char          *colorOrder;

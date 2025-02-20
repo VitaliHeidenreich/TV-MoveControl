@@ -4,8 +4,7 @@
 #include "WS2812B.h"
 #include "BluetoothSerial.h"
 #include <ctype.h>
-
-
+#include "defines.h"
 
 App::App()
 {
@@ -25,6 +24,23 @@ uint8_t getHelp(char *c)
         ((*(c+2) == 'E')||(*(c+2) == 'e')) &&
         ((*(c+1) == 'L')||(*(c+1) == 'l')) &&
         ((*(c+0) == 'P')||(*(c+0) == 'p')) )
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+// Get help
+uint8_t getStatus(char *c)
+{
+    if( ((*(c+5) == 'S')||(*(c+5) == 's')) &&
+        ((*(c+4) == 'T')||(*(c+4) == 't')) &&
+        ((*(c+3) == 'A')||(*(c+3) == 'a')) &&
+        ((*(c+2) == 'T')||(*(c+2) == 't')) &&
+        ((*(c+1) == 'U')||(*(c+1) == 'u')) &&
+        ((*(c+0) == 'S')||(*(c+0) == 's')) )
     {
         return 1;
     }
@@ -64,11 +80,53 @@ uint8_t App::readCommandCharFromSerial(char CommandChar)
         if( _AppBefehlBuffer[8] == 'R' )
         {
             Serial.write(">>>>>>> Aktuelles Strom ADC Limit ist: ");
-            Serial.println( settings->getSavedUpperCollisionADCValue() );
+            Serial.println( settings->readEEPromSavedMotorCollisionValue() );
 
             Serial.write(">>>>>>> Aktuelle Einschaltschwelle ist: ");
             Serial.println( settings->getSavedTurnOnValue() );
         }
+        // Einstellung der Zeit
+        else if( _AppBefehlBuffer[8] == 'Z' )
+        {
+            if(settings->setTime( charToInt(_AppBefehlBuffer[7])*10+charToInt(_AppBefehlBuffer[6]), 
+                charToInt(_AppBefehlBuffer[5])*10+charToInt(_AppBefehlBuffer[4]),
+                charToInt(_AppBefehlBuffer[3])*10+charToInt(_AppBefehlBuffer[2])))
+            {
+                Serial.write(">>>>>>> Neue Zeit wurde eingestellt auf: ");
+                Serial.print(charToInt(_AppBefehlBuffer[7])*10+charToInt(_AppBefehlBuffer[6])); Serial.print(":"); 
+                Serial.print(charToInt(_AppBefehlBuffer[5])*10+charToInt(_AppBefehlBuffer[4])); Serial.print(":"); 
+                Serial.println(charToInt(_AppBefehlBuffer[3])*10+charToInt(_AppBefehlBuffer[2]));
+            }
+            else
+            {
+                Serial.write(">>>>>>> ERROR: Fehler bei der Zeiteinstellung.");
+            }
+        }
+        // Aktuelle Zeit ausgeben
+        else if( _AppBefehlBuffer[8] == 'G' )
+        {
+            uint8_t h=0, m=0, s=0;
+            Serial.write(">>>>>>> Aktuell eingestellte Zeit ist: ");
+            settings->getTime( &h, &m );
+            Serial.write(h); Serial.print(":"); Serial.print(m); Serial.print(":"); Serial.println(s);
+        }
+        // Einstellung des Datums
+        else if( _AppBefehlBuffer[8] == 'Y' )
+        {
+            Serial.write(">>>>>>> Neue Datum wurde eingestellt. ");
+            settings->setDate( charToInt(_AppBefehlBuffer[7])*10+charToInt(_AppBefehlBuffer[6]), 
+                charToInt(_AppBefehlBuffer[5])*10+charToInt(_AppBefehlBuffer[4]),
+                charToInt(_AppBefehlBuffer[3])*10+charToInt(_AppBefehlBuffer[2]));
+        }
+        // Aktuelles Datum ausgeben
+        else if( _AppBefehlBuffer[8] == 'X' )
+        {
+            uint8_t D, M, Y;
+            Serial.write(">>>>>>> Aktuell eingestelltes Datum ist: ");
+            settings->getDate( &Y, &M, &D );
+            Serial.write(D); Serial.write(":"); Serial.write(M); Serial.write(":20"); Serial.write(Y); Serial.write("\n");
+        }
+
         else if( _AppBefehlBuffer[8] == 'T' )
         {
             InOut->sendDebugMotorCurrent = 0;
@@ -85,15 +143,15 @@ uint8_t App::readCommandCharFromSerial(char CommandChar)
         }
         else if( _AppBefehlBuffer[8] == 'M' )
         {
-            InOut->sendCurrentADCValues = 0;
-            if( InOut->sendDebugMotorCurrent == 0 )
+            if( InOut->sendMotorCurrentValues == 0 )
             {
-                InOut->sendDebugMotorCurrent = 1;
+                InOut->sendMotorCurrentValues = 1;
                 Serial.println( ">>>>>>> START: Lesen Motor ADC Werte" );
             }
             else
             {
-                InOut->sendDebugMotorCurrent = 0;
+                // Delete: sendDebugMotorCurrent
+                InOut->sendMotorCurrentValues = 0;
                 Serial.println( ">>>>>>> END: Lesen Motor ADC Werte" );
             }
         }
@@ -105,80 +163,114 @@ uint8_t App::readCommandCharFromSerial(char CommandChar)
                             charToInt(_AppBefehlBuffer[4]) * 100 +
                             charToInt(_AppBefehlBuffer[3]) * 10 +
                             charToInt(_AppBefehlBuffer[2]) * 1 );
-            }
 
-            if( calcVal >= 200 && calcVal <= 4000 )
-            {
-                if(_AppBefehlBuffer[7] == 'C')
+                if( calcVal >= 1 && calcVal <= 4000 )
                 {
-                    settings->saveUpperCollisionADCValue( calcVal );
-                    Serial.write(" >>> New collision detection limits is ");
-                    Serial.println( calcVal );
-                }
-                else if(_AppBefehlBuffer[7] == 'E')
-                {
-                    settings->saveTurnOnValue( calcVal );
-                    Serial.write(" >>> New turn on detection limit is ");
-                    Serial.println( calcVal );
-
-                    if( settings->getSavedTurnOffValue_D() >= calcVal )
+                    if(_AppBefehlBuffer[7] == 'C')
                     {
-                        settings->saveTurnOffValue( calcVal - 20 );
-                        Serial.write(" >>> Also turn on value have to be adapted because it have to be grater that turn off. New value is ");
-                        Serial.println( calcVal + 20 );
+                        settings->saveUpperCollisionADCValue( calcVal );
+                        Serial.write(" >>> New collision detection limits is ");
+                        Serial.print( calcVal ); Serial.println( "." );
                     }
-                }
-                else if(_AppBefehlBuffer[7] == 'A')
-                {
-                    settings->saveTurnOffValue( calcVal );
-                    Serial.write(" >>> New turn off detection limit is ");
-                    Serial.println( calcVal );
-
-                    if( settings->getSavedTurnOnValue_D() <= calcVal )
+                    else if(_AppBefehlBuffer[7] == 'E')
                     {
-                        settings->saveTurnOnValue( calcVal + 20 );
-                        Serial.write(" >>> Also turn on value have to be adapted because it have to be grater that turn off. New value is ");
-                        Serial.println( calcVal + 20 );
-                    }
-                }
-                else if(_AppBefehlBuffer[7] == 'S')
-                {
-                    settings->saveTurnOffValue( calcVal );
-                    Serial.write(" >>> Light special adapted to num.: ");
-                    Serial.println( _AppBefehlBuffer[6] );
+                        settings->saveTurnOnValue( calcVal );
+                        Serial.write(" >>> New turn on detection limit is ");
+                        Serial.print( calcVal ); Serial.println( "." );
 
-                    settings->colorchanged = 1;
-                    settings->setColorAndLightBehavior( _AppBefehlBuffer[6] );
-                }
-                else
-                {
-                    Serial.write(" >>> ERROR: Wrong definbed write function. Please try again.\n");
+                        if( settings->getSavedTurnOffValue_D() >= calcVal )
+                        {
+                            settings->saveTurnOffValue( calcVal - 20 );
+                            Serial.write(" >>> Also turn on value have to be adapted because it have to be grater that turn off. New value is ");
+                            Serial.print( calcVal + 20 ); Serial.println( "." );
+                        }
+                    }
+                    else if(_AppBefehlBuffer[7] == 'A')
+                    {
+                        settings->saveTurnOffValue( calcVal );
+                        Serial.write(" >>> New turn off detection limit is ");
+                        Serial.print( calcVal ); Serial.println( "." );
+
+                        if( settings->getSavedTurnOnValue_D() <= calcVal )
+                        {
+                            settings->saveTurnOffValue( calcVal + 20 );
+                            Serial.write(" >>> Also turn on value have to be adapted because it have to be grater that turn off. New value is ");
+                            Serial.print( calcVal + 20 ); Serial.println( "." );
+                        }
+                    }
+                    else if(_AppBefehlBuffer[7] == 'D')
+                    {
+                        if( calcVal < 100 )
+                        {
+                            settings->saveDivTurnOnOffValue( calcVal );
+                            Serial.write(" >>> New turn on and off adc deviation value is ");
+                            Serial.print( calcVal ); Serial.println( "." );
+                        }
+                        else
+                            Serial.write(" >>> ERROR: Make sure the new value for the diviation is not greater than 99.\n");
+                    }
+                    else if(_AppBefehlBuffer[7] == 'T')
+                    {
+                        if( calcVal < 100 )
+                        {
+                            settings->saveDivTurnOnOffValue( calcVal );
+                            Serial.write(" >>> New turn on and off adc deviation value is ");
+                            Serial.print( calcVal ); Serial.println( "." );
+                        }
+                        else
+                            Serial.write(" >>> ERROR: Make sure the new value for the diviation is not greater than 99.\n");
+                    }
+                    else
+                    {
+                        Serial.write(" >>> ERROR: Wrong defined write function. Please try again.\n");
+                    }
                 }
             }
             else
             {
-                Serial.write(" >>> ERROR: Please ensure the new value is a number ans is between 200 and 4000\n");
+                Serial.write(" >>> ERROR: Please ensure the new value is a number and it's between 1 and 4000.\n");
             }
         }
         else
         {
-            Serial.write(" >>> ERROR: ERROR_not_command_found\n");
+            Serial.write(" >>> ERROR: ERROR_command_not_found. Try help or status.\n");
         }
     }
     else
     {
         if( getHelp(_AppBefehlBuffer) )
         {
-            Serial.println( "Help for write and read of the limits:" );
-            Serial.println( "--- XR000000$!: read collision detection limit and turn on detection limit" );
-            Serial.println( "--- XT000000$!: read of the currently ADC value (toggel: On/Off)" );
-            Serial.println( "--- XWC0XXXX$!: write the new collision detection limit (XXXX = decimal value)" );
-            Serial.println( "--- XWE0XXXX$!: write new turn on value (XXXX = decimal value) \nEND\n" );
-            Serial.println( "--- XWA0XXXX$!: write new turn off value (XXXX = decimal value) \nEND\n" );
-            Serial.println( "--- XWSX0000$!: write new turn off value (XXXX = decimal value) \nEND\n" );
+            Serial.println( "\nHelp for write and read of the limits:" );
+            Serial.println( "--- XR000000$!\n read collision detection limit and turn on detection limit" );
+            Serial.println( "--- XT000000$!\n read of the currently ADC value (toggel: On/Off)\n");
+
+            Serial.println( "--- XM000000$!\n read of the currently ADC value (toggel: On/Off)" );
+            Serial.println( "--- XWC0XXXX$!\n write the new collision detection limit (XXXX = decimal value)\n");
+
+            Serial.println( "--- XWE0XXXX$!\n write new turn on value (XXXX = decimal value)" );
+            Serial.println( "--- XWA0XXXX$!\n write new turn off value (XXXX = decimal value)\n" );
+
+            Serial.println( "--- XWD000XX$!\n write the diviation for the auto values (XXXX = decimal value)\n" );
+
+            Serial.println( "--- XZhhmmss$!\n set new time." );
+            Serial.println( "--- XG000000$!\n get last time." );
+            Serial.println( "--- XYDDMMYY$!\n set new date." );
+            Serial.println( "--- XX000000$!\n get last time.\n" );
+
             Serial.println( "Software details:");
-            Serial.println( "\tFirmware version 2.8.21");
+            Serial.println( "\tFirmware version 2.8.21 R1");
             Serial.println( "\t08/24/2024 Moosburg");
+        }
+        else if( getStatus(_AppBefehlBuffer) )
+        {
+            Serial.println( "\nCurently settings:" );
+            Serial.println( "\tCollision ADC limit:" );
+            Serial.println( "\tTV on ADC on value:" );
+            Serial.println( "\tTV on ADC off value:" );
+        }
+        else
+        {
+            //Serial.write(" >>> ERROR: ERROR_command_not_found. Try help or status.\n");
         }
     }
 
@@ -366,8 +458,8 @@ void App::CommSetTime(char AppBefehl[6])
 
 void App::setFrequenzAndSpeed( char *_AppBefehl )
 {
-    uint32_t speed = MAX_SPEED;
-    uint32_t frequenz = FREQUENZ;
+    uint32_t speed = 220;
+    uint32_t frequenz = 650;
 
     speed    = _hexcharToUint8_t(*(_AppBefehl+6))*16+_hexcharToUint8_t(*(_AppBefehl+7));
     frequenz = _hexcharToUint8_t(*(_AppBefehl+3))*256+_hexcharToUint8_t(*(_AppBefehl+4))*16+_hexcharToUint8_t(*(_AppBefehl+5));

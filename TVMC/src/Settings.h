@@ -24,16 +24,18 @@ class Settings
                 static uint8_t _ManMoveDir;
 
                 // Freigabe der Steuerung nach einer Definierten Zeit beim Aufstart
-                uint8_t checkStartUpDone( uint8_t justRead );
+                void incrementStartUpCounter( void );
+                uint8_t checkStartUpIsDone( void );
 
                 // Speichern der Angaben auf den EEPROM
                 void saveActColor( void );
+                void saveActColor( int red, int green, int blue );
                 void getSavedColor( void );
 
                 // Settings for collision limit
                 void saveUpperCollisionADCValue( uint16_t val );
-                uint16_t getSavedUpperCollisionADCValue( void );
-                uint16_t getSavedUpperCollisionADCValue_D( void );
+                uint16_t readEEPromSavedMotorCollisionValue( void );
+                uint16_t readSavedMotorCollisionValue_Direct( void );
 
                 void saveTurnOnValue( uint16_t val );
                 uint16_t getSavedTurnOnValue( void );
@@ -46,6 +48,10 @@ class Settings
                 // Test function  eeprom
                 void setDirectColor( pixel_t c );
                 void getDirectColor( pixel_t *c );
+
+                uint8_t getDivTurnOnOffValue( void );
+                uint8_t getDivTurnOnOffValue_D( void );
+                void saveDivTurnOnOffValue( uint8_t val );
 
                 /******************************************************************
                  * vector  0: - Trigger if != 0
@@ -66,6 +72,7 @@ class Settings
                 uint8_t setTime( uint8_t hours, uint8_t minutes, uint8_t seconds );
                 void getTime( uint8_t *hours, uint8_t *minutes, uint8_t *seconds );
                 void getTime( uint8_t *hours, uint8_t *minutes );
+                uint8_t getTimeHour( void );
 
                 uint8_t setDate( uint8_t year, uint8_t month, uint8_t date );
                 void getDate( uint8_t *year, uint8_t *month, uint8_t *date );
@@ -75,16 +82,23 @@ class Settings
                 void setColorAndLightBehavior( uint8_t setting );
                 uint8_t getColorAndLightBehavior(byte red, byte green, byte blue);
 
+                void setLightBehaviour( uint8_t val );
+                uint8_t getLightBehaviour( void );
+                uint8_t getLightBehaviour_D( void );
+
                 static uint8_t colorchanged;
 
         private:
                 static pixel_t _Color;
                 static uint16_t _UpperCollisionADCValue;
                 static uint16_t _TurnOnCurrentValue;
+                static uint16_t _DivOnAndOffADCValue;
                 static uint16_t _TurnOffCurrentValue;
+                static uint8_t _BrightnessValue;
                 static uint8_t _x;
                 static uint8_t _eepromInitialized;
                 static uint8_t colorAndLightBehavior;
+                static uint8_t startUpIsDone;
 };
 
 #endif /* SETTINGS_H */
