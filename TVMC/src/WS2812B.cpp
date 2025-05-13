@@ -289,11 +289,11 @@ void WS2812::alternateColor( )
         }
     }
     if( col == 0 )
-        setAllPixels(50*illumination/100, 0*illumination/100, 0*illumination/100);
+        setAllPixels(50*illumination/100, 0*illumination/100, 30*illumination/100);
     else if( col == 1 )
-        setAllPixels(0*illumination/100, 50*illumination/100, 0*illumination/100);
+        setAllPixels(0*illumination/100, 50*illumination/100, 30*illumination/100);
     else
-        setAllPixels(0*illumination/100, 0*illumination/100, 50*illumination/100);
+        setAllPixels(30*illumination/100, 0*illumination/100, 50*illumination/100);
 
     show();
 }

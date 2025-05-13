@@ -4,7 +4,7 @@
 #include "defines.h"
 
 pixel_t Settings::_Color = {100,0,0};
-uint16_t Settings::_UpperCollisionADCValue = 800;
+uint16_t Settings::_UpperCollisionADCValue = 100;
 uint16_t Settings::_TurnOnCurrentValue = 3040;
 uint16_t Settings::_TurnOffCurrentValue = 3021;
 uint16_t Settings::_DivOnAndOffADCValue = 10;
@@ -88,7 +88,7 @@ pixel_t Settings::getColor( void )
     uint8_t ret_Blue = _Color.blue;
 
     uint8_t hou;
-
+    
     switch ( Settings::colorAndLightBehavior )
     {
         case 1:
@@ -459,9 +459,16 @@ uint8_t Settings::setTime( uint8_t hours, uint8_t minutes, uint8_t seconds )
 
     if( (hours <= 23) && (minutes <= 59) && (seconds <= 59) )
     {
-        h = (uint8_t(hours  /10) << 4) | ( hours   % 10 );
-        s = (uint8_t(seconds/10) << 4) | ( seconds % 10 );
-        m = (uint8_t(minutes/10) << 4) | ( minutes % 10 );
+        if( hours >= 20 )
+            h = 0b00100000;
+        else if( hours >= 10 )
+            h = 0b00010000;
+        else
+            h = 0;
+
+        h =  h + ( hours % 10 );
+        s =  (uint8_t(seconds/10) << 4) | ( seconds % 10 );
+        m =  (uint8_t(minutes/10) << 4) | ( minutes % 10 );
 
         Wire.begin( 21, 22, 300000 );
         Wire.beginTransmission( I2C_DS3231 );
@@ -488,7 +495,7 @@ uint8_t Settings::setTime( uint8_t hours, uint8_t minutes, uint8_t seconds )
  ****************************************************************************************/
 void Settings::getTime( uint8_t *hours, uint8_t *minutes )
 {
-    uint8_t m, h;
+    uint8_t m=0, h=0, helper=0;
     Wire.begin( 21, 22, 300000 );
     Wire.beginTransmission( I2C_DS3231 );
     Wire.write( 0x01 );
@@ -497,9 +504,18 @@ void Settings::getTime( uint8_t *hours, uint8_t *minutes )
 
     m = Wire.read();
     h = Wire.read();
+    delayMicroseconds(3);
 
     *minutes = (( m>>4 )*10) + ( m & 0x0f );
-    *hours   = ((h>>4)&0x03)*10 + (h & 0x0f);
+    
+    if( h & 0b00100000 )
+        helper = 20;
+    else if( h & 0b00010000 )
+        helper = 10;
+    else
+        helper = 0;
+
+    *hours = helper + ( h & 0x0f );
 }
 
 /****************************************************************************************
@@ -510,16 +526,26 @@ void Settings::getTime( uint8_t *hours, uint8_t *minutes )
  ****************************************************************************************/
 uint8_t Settings::getTimeHour( void )
 {
-    uint8_t h;
+    uint8_t h, hours;
     Wire.begin( 21, 22, 300000 );
     Wire.beginTransmission( I2C_DS3231 );
     Wire.write( 0x02 );
     Wire.endTransmission( );
-    Wire.requestFrom( I2C_DS3231, 2);
+    Wire.requestFrom( I2C_DS3231, 1);
 
     h = Wire.read();
+    delayMicroseconds(3);
 
-    return (((h>>4)&0x03)*10 + (h & 0x0f));
+    if( h & 0b00100000 )
+        hours = 20;
+    else if( h & 0b00010000 )
+        hours = 10;
+    else
+        hours = 0;
+
+    hours = hours + (h & 0x0f);
+
+    return hours;
 }
 
 /****************************************************************************************
@@ -530,7 +556,7 @@ uint8_t Settings::getTimeHour( void )
  ****************************************************************************************/
 void Settings::getTime( uint8_t *hours, uint8_t *minutes, uint8_t *seconds )
 {
-    uint8_t s, m, h;
+    uint8_t s=0, m=0, h=0, helper=0;
     Wire.begin( 21, 22, 300000 );
 
     Wire.beginTransmission( I2C_DS3231 );
@@ -541,10 +567,19 @@ void Settings::getTime( uint8_t *hours, uint8_t *minutes, uint8_t *seconds )
     s = Wire.read();
     m = Wire.read();
     h = Wire.read();
+    delayMicroseconds(3);
 
     *seconds = (( s>>4 )*10) + ( s & 0x0f );
     *minutes = (( m>>4 )*10) + ( m & 0x0f );
-    *hours   = ((h>>4)&0x03)*10 + (h & 0x0f);
+
+    if( h & 0b00100000 )
+        helper = 20;
+    else if( h & 0b00010000 )
+        helper = 10;
+    else
+        helper = 0;
+
+    *hours = helper + ( h & 0x0f );
 }
 
 /****************************************************************************************

@@ -72,7 +72,6 @@ void setup()
     InOut = mypins();
     Led = new WS2812((gpio_num_t)LED_PIN,LED_CNT_SUM);
     // Led->setAllPixels(100, 0, 0);
-    // ets_delay_us(99999999);
     Led->turnOffAllPixels( );
 
     if (!SerialBT.begin("MyTV_Movit_V2"))

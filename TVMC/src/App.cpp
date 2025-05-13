@@ -107,8 +107,8 @@ uint8_t App::readCommandCharFromSerial(char CommandChar)
         {
             uint8_t h=0, m=0, s=0;
             Serial.write(">>>>>>> Aktuell eingestellte Zeit ist: ");
-            settings->getTime( &h, &m );
-            Serial.write(h); Serial.print(":"); Serial.print(m); Serial.print(":"); Serial.println(s);
+            settings->getTime( &h, &m, &s );
+            Serial.print(h); Serial.print(":"); Serial.print(m); Serial.print(":"); Serial.println(s);
         }
         // Einstellung des Datums
         else if( _AppBefehlBuffer[8] == 'Y' )
