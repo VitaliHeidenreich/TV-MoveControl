@@ -18,8 +18,8 @@
 #define NO_COLLISION 0
 
 // Anzahl der LEDS --> Fernseher: 112
-#define LED_CNT_SUM 30
-#define LED_CNT_UPPER_ROW 10
+#define LED_CNT_SUM 112 //30
+#define LED_CNT_UPPER_ROW 34 //10
 
 // Timer defines
 #define PRESCALER 80

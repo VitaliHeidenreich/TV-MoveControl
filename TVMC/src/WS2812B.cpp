@@ -377,15 +377,15 @@ void WS2812::showMovingLights(uint8_t direction, pixel_t targetColor)
     {
         if( direction == 1)
         {
-            place ++;
-            if( place >= LED_CNT_UPPER_ROW )
-                place = 0;
-        }
-        else
-        {
             if( place == 0 )
                 place = LED_CNT_UPPER_ROW;
             place --;
+        }
+        else
+        {
+            place ++;
+            if( place >= LED_CNT_UPPER_ROW )
+                place = 0;
         }
 
         for(uint8_t i = 0; i < LED_CNT_UPPER_ROW; i++)

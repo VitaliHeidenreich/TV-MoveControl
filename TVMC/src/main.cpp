@@ -6,6 +6,8 @@
 #include "BluetoothSerial.h"
 #include "defines.h"
 
+// NewBoardV2
+
 #define MAX_GET_VAL 10
 
 #define COUNT_UP 0
@@ -75,23 +77,16 @@ void setup()
     Led->turnOffAllPixels( );
 
     if (!SerialBT.begin("MyTV_Movit_V2"))
-    {
         Serial.println("ERROR: Bluetooth kann nicht gestartet werden!");
-    }
     
     // Einlesen der NV Werte
     set->getSavedColor( );
     set->getSavedTurnOnValue( );
     set->getSavedTurnOffValue( );
     set->readEEPromSavedMotorCollisionValue( );
-    Serial.println("TVMC gestartet! To get help tipe \"help\" in to the console. For the the status \"status\".");
 
     if( set->checkForPowerLossRtc() )
-    {
         Serial.println("RTC power loss was detected! RTC will set initialy to 12:00:00");
-        set->setTime(12,27,58);
-        set->setDate(1,1,25);
-    }
     
     InOut.setMotorSpeed( 0 );
     InOut.setColorChangeTrigger();

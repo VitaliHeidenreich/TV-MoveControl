@@ -12,6 +12,9 @@ class Settings
                 //Konstruktor
                 Settings();
 
+                // Just for debug
+                uint32_t getEeproWriteCount( void );
+
                 /****************************************
                  * LED Farbe
                  ***************************************/
@@ -80,7 +83,7 @@ class Settings
                 uint8_t checkForPowerLossRtc();
 
                 void setColorAndLightBehavior( uint8_t setting );
-                uint8_t getColorAndLightBehavior(byte red, byte green, byte blue);
+                uint8_t getColorAndLightBehavior( );
 
                 void setLightBehaviour( uint8_t val );
                 uint8_t getLightBehaviour( void );
@@ -89,6 +92,7 @@ class Settings
                 static uint8_t colorchanged;
 
         private:
+                void incrementEeproWriteCount();
                 static pixel_t _Color;
                 static uint16_t _UpperCollisionADCValue;
                 static uint16_t _TurnOnCurrentValue;
@@ -99,6 +103,7 @@ class Settings
                 static uint8_t _eepromInitialized;
                 static uint8_t colorAndLightBehavior;
                 static uint8_t startUpIsDone;
+                static uint32_t _eepromWriteCounter;
 };
 
 #endif /* SETTINGS_H */

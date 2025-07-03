@@ -10,6 +10,7 @@ uint16_t Settings::_TurnOffCurrentValue = 3021;
 uint16_t Settings::_DivOnAndOffADCValue = 10;
 uint8_t Settings::_AutoMove     = 0;
 uint8_t Settings::_BrightnessValue = 80;
+uint32_t Settings::_eepromWriteCounter = 0;
 /**
  * @brief Motor direction manual move
  * 
@@ -31,6 +32,17 @@ uint8_t Settings::startUpIsDone = 0;
 Settings::Settings()
 {
 
+}
+
+// Just for debug
+uint32_t Settings::getEeproWriteCount( void )
+{
+    return Settings::_eepromWriteCounter;
+}
+
+void Settings::incrementEeproWriteCount( void )
+{
+    Settings::_eepromWriteCounter++;
 }
 
 /****************************************
@@ -70,7 +82,7 @@ void Settings::setColorAndLightBehavior( uint8_t setting )
  * @param no
  * @return pixel_t {red,green,blue}
  ****************************************************************************************/
-uint8_t Settings::getColorAndLightBehavior(byte red, byte green, byte blue)
+uint8_t Settings::getColorAndLightBehavior( )
 {
     return Settings::colorAndLightBehavior;
 }
@@ -100,12 +112,17 @@ pixel_t Settings::getColor( void )
                 ret_Blue  = 0;
             }
             break;
+        case 3:
+            ret_Red   = ret_Red   * 0.3;
+            ret_Green = ret_Green * 0.3;
+            ret_Blue  = ret_Blue  * 0.3;
+            break;
 
-        case 2:
+        default:
             hou = Settings::getTimeHour( );
-            if( (hou >= 0) && (hou <= 5) )
+            if( (hou >= 23) || (hou <= 5) )
             {
-                if( (hou >= 1) && (hou <= 4) )
+                if( (hou >= 0) && (hou <= 4) )
                 {
                     ret_Red   = 0;
                     ret_Green = 0;
@@ -125,15 +142,6 @@ pixel_t Settings::getColor( void )
                 ret_Blue  = ret_Blue  * 0.2;
             }
             else{ /* nop */ }
-            break;
-
-        case 3:
-            ret_Red   = ret_Red   * 0.3;
-            ret_Green = ret_Green * 0.3;
-            ret_Blue  = ret_Blue  * 0.3;
-            break;
-
-        default:
             break;
     }
 
@@ -206,6 +214,7 @@ void Settings::getSavedColor( void )
 
 void Settings::saveActColor( )
 {
+    incrementEeproWriteCount( );
     Wire.begin( 21, 22, 800000 );
     Wire.beginTransmission( I2C_ADDRESS );
     Wire.write( 0x01 );
@@ -214,10 +223,12 @@ void Settings::saveActColor( )
     Wire.write( _Color.blue );
     Wire.endTransmission( );
     delay(5); // important!
+    _eepromWriteCounter++;
 }
 
 void Settings::saveActColor( int red, int green, int blue )
 {
+    incrementEeproWriteCount( );
     Wire.begin( 21, 22, 800000 );
     Wire.beginTransmission( I2C_ADDRESS );
     Wire.write( 0x01 );
@@ -226,6 +237,7 @@ void Settings::saveActColor( int red, int green, int blue )
     Wire.write( blue );
     Wire.endTransmission( );
     delay(5); // important!
+    _eepromWriteCounter++;
 }
 
 /****************************************************************************************
@@ -262,6 +274,7 @@ uint16_t Settings::readSavedMotorCollisionValue_Direct( void )
  ****************************************************************************************/
 void Settings::saveUpperCollisionADCValue( uint16_t val )
 {
+    incrementEeproWriteCount( );
     Settings::_UpperCollisionADCValue = val;
 
     Wire.begin( 21, 22, 800000 );
@@ -271,6 +284,7 @@ void Settings::saveUpperCollisionADCValue( uint16_t val )
     Wire.write( val%100 );
     Wire.endTransmission( );
     delay(5); // important!
+    _eepromWriteCounter++;
 }
 
 /****************************************************************************************
@@ -306,6 +320,7 @@ uint16_t Settings::getSavedTurnOnValue_D( void )
  ****************************************************************************************/
 void Settings::saveTurnOnValue( uint16_t val )
 {
+    incrementEeproWriteCount( );
     Settings::_TurnOnCurrentValue = val;
 
     Wire.begin( 21, 22, 800000 );
@@ -315,6 +330,7 @@ void Settings::saveTurnOnValue( uint16_t val )
     Wire.write( val%100 );
     Wire.endTransmission( );
     delay(5); // important!
+    _eepromWriteCounter++;
 }
 
 /****************************************************************************************
@@ -350,6 +366,7 @@ uint16_t Settings::getSavedTurnOffValue_D( void )
  ****************************************************************************************/
 void Settings::saveTurnOffValue( uint16_t val )
 {
+    incrementEeproWriteCount( );
     Settings::_TurnOffCurrentValue = val;
 
     Wire.begin( 21, 22, 800000 );
@@ -359,6 +376,7 @@ void Settings::saveTurnOffValue( uint16_t val )
     Wire.write( val%100 );
     Wire.endTransmission( );
     delay(5); // important!
+    _eepromWriteCounter++;
 }
 
 /****************************************************************************************
@@ -390,6 +408,7 @@ uint8_t Settings::getDivTurnOnOffValue_D( void )
  ****************************************************************************************/
 void Settings::saveDivTurnOnOffValue( uint8_t val )
 {
+    incrementEeproWriteCount( );
     Settings::_DivOnAndOffADCValue = val;
 
     Wire.begin( 21, 22, 700000 );
@@ -398,6 +417,7 @@ void Settings::saveDivTurnOnOffValue( uint8_t val )
     Wire.write( val );
     Wire.endTransmission( );
     delay(5); // important!
+    _eepromWriteCounter++;
 }
 
 
@@ -432,6 +452,7 @@ uint8_t Settings::getLightBehaviour_D( void )
  ****************************************************************************************/
 void Settings::setLightBehaviour( uint8_t val )
 {
+    incrementEeproWriteCount( );
     Settings::colorAndLightBehavior = val;
 
     Wire.begin( 21, 22, 700000 );
@@ -440,6 +461,7 @@ void Settings::setLightBehaviour( uint8_t val )
     Wire.write( val );
     Wire.endTransmission( );
     delay(5); // important!
+    _eepromWriteCounter++;
 }
 
 

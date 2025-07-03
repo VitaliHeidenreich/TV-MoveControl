@@ -79,11 +79,23 @@ uint8_t App::readCommandCharFromSerial(char CommandChar)
     {
         if( _AppBefehlBuffer[8] == 'R' )
         {
-            Serial.write(">>>>>>> Aktuelles Strom ADC Limit ist: ");
-            Serial.println( settings->readEEPromSavedMotorCollisionValue() );
-
-            Serial.write(">>>>>>> Aktuelle Einschaltschwelle ist: ");
-            Serial.println( settings->getSavedTurnOnValue() );
+            if(_AppBefehlBuffer[7] == 'C')
+            {
+                Serial.write(">>>>>>> Aktuelles Strom ADC Limit ist: ");
+                Serial.println( settings->readEEPromSavedMotorCollisionValue() );
+            }
+            else if(_AppBefehlBuffer[7] == 'N')
+            {
+                Serial.write(">>>>>>> Aktuelle Einschaltschwelle ist: ");
+                Serial.println( settings->getSavedTurnOnValue() );
+            }
+            else if(_AppBefehlBuffer[7] == 'F')
+            {
+                Serial.write(">>>>>>> Aktuelle Ausschaltschwelle ist: ");
+                Serial.println( settings->getSavedTurnOffValue() );
+            }
+            else
+                Serial.write("ERROR: Wrong command pattern.\n");
         }
         // Einstellung der Zeit
         else if( _AppBefehlBuffer[8] == 'Z' )
@@ -226,6 +238,16 @@ uint8_t App::readCommandCharFromSerial(char CommandChar)
                     }
                 }
             }
+            else if( _AppBefehlBuffer[8] == 'U' )
+            {
+                Serial.write(" >>> Light Effects: ");
+                if( settings->getColorAndLightBehavior() == 1 )
+                    Serial.println(" between 0 and 5 am off");
+                if( settings->getColorAndLightBehavior() == 2 )
+                    Serial.println(" between 23 pm and 5 am dimmed \n between 0 and 4 am off");
+                else
+                    Serial.println(" no. always on");
+            }
             else
             {
                 Serial.write(" >>> ERROR: Please ensure the new value is a number and it's between 1 and 4000.\n");
@@ -241,25 +263,27 @@ uint8_t App::readCommandCharFromSerial(char CommandChar)
         if( getHelp(_AppBefehlBuffer) )
         {
             Serial.println( "\nHelp for write and read of the limits:" );
-            Serial.println( "--- XR000000$!\n read collision detection limit and turn on detection limit" );
-            Serial.println( "--- XT000000$!\n read of the currently ADC value (toggel: On/Off)\n");
+            Serial.println( "     Get ADC Values:" );
+            Serial.println( "         XR000000$!   read collision detection limit and turn on detection limit" );
+            
+            Serial.println( "     Read ADC Values:" );
+            Serial.println( "          XT000000$!   read of the currently ADC value (toggel: On/Off)");
+            Serial.println( "          XM000000$!   read of the currently ADC value (toggel: On/Off)" );
+            Serial.println( "     Write ADC Values:" );
+            Serial.println( "          XWC0XXXX$!   write the new collision detection limit (XXXX = decimal value)");
+            Serial.println( "          XWE0XXXX$!   write new turn on value (XXXX = decimal value)" );
+            Serial.println( "          XWA0XXXX$!   write new turn off value (XXXX = decimal value)" );
+            Serial.println( "          XWD000XX$!   write the diviation for the auto values (XXXX = decimal value)" );
 
-            Serial.println( "--- XM000000$!\n read of the currently ADC value (toggel: On/Off)" );
-            Serial.println( "--- XWC0XXXX$!\n write the new collision detection limit (XXXX = decimal value)\n");
-
-            Serial.println( "--- XWE0XXXX$!\n write new turn on value (XXXX = decimal value)" );
-            Serial.println( "--- XWA0XXXX$!\n write new turn off value (XXXX = decimal value)\n" );
-
-            Serial.println( "--- XWD000XX$!\n write the diviation for the auto values (XXXX = decimal value)\n" );
-
-            Serial.println( "--- XZhhmmss$!\n set new time." );
-            Serial.println( "--- XG000000$!\n get last time." );
-            Serial.println( "--- XYDDMMYY$!\n set new date." );
-            Serial.println( "--- XX000000$!\n get last time.\n" );
+            Serial.println( "     Time control:" );
+            Serial.println( "         XZXXXXXX$!   set new time. hhmmss" );
+            Serial.println( "         XG000000$!   get current time." );
+            Serial.println( "         XYXXXXXX$!   set new date. DDMMYY" );
+            Serial.println( "         XX000000$!   get current date.\n" );
 
             Serial.println( "Software details:");
-            Serial.println( "\tFirmware version 2.8.21 R1");
-            Serial.println( "\t08/24/2024 Moosburg");
+            Serial.println( "     Firmware version 2.8.2 1 R1");
+            Serial.println( "          08/24/2024 Moosburg");
         }
         else if( getStatus(_AppBefehlBuffer) )
         {
@@ -290,7 +314,7 @@ uint8_t App::readCommandCharFromSerial(char CommandChar)
 */
 
 /***************************************************************************
- * Zusammenfügen der einzelnen übertragenen char aus der App in Befehlsbuffer
+ * Zusammenfügen der einzelnen übertragenen char aus der App  in Befehlsbuffer
  * Übergabeparameter: char aus der seriellen BT Übertragung
  * Rückgabe: uint8_t zur Anzeige ob Befehl aktiv war oder nicht
 ***************************************************************************/

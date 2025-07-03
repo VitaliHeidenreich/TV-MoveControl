@@ -47,9 +47,21 @@ mypins::mypins()
 uint8_t mypins::getColorChangeTrigger()
 {
     static uint8_t lastHourVal = 12;
+    static uint32_t eepromReadDelayConter = 0;
     uint8_t actHourVal = 13;
-    actHourVal = settings->getTimeHour();
 
+    // Einlesen der Stunden, alle 5s
+    if( eepromReadDelayConter >= ( 5000 / INTERRUPTTIME ) )
+    {
+        actHourVal = settings->getTimeHour();
+        eepromReadDelayConter = 0;
+    }
+    else
+    {
+        eepromReadDelayConter++;
+    }   
+
+    
     if( settings->colorchanged == 1 || (lastHourVal != actHourVal) )
     {
         settings->colorchanged = 0;
